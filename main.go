@@ -8,7 +8,6 @@ const (
   progname = "etcd-reverse-proxy"
 )
 
-
 func main() {
   log.Printf("%s starting",progname)
   c := parseConfig()
@@ -16,9 +15,8 @@ func main() {
   w := NewEtcdWatcher(c)
   w.init()
 
-  p := NewProxy(c)
+  p := NewProxy(c, &DummyResolver{})
   p.start()
-
 
 }
 

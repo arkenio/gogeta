@@ -2,36 +2,33 @@ package main
 
 import (
   "fmt"
-  "net/http"
-  "net/http/httputil"
-  "net/url"
   "log"
-  "regexp"
+  "net/http"
 )
+
+type domainResolver interface {
+  resolve(domain string) (http.Handler, bool)
+}
 
 type proxy struct {
   config *Config
+  domainResolver domainResolver
 }
 
-
-func NewProxy(c *Config) *proxy {
-  p := &proxy{}
-  p.config = c
-  return p
+func NewProxy(c *Config, resolver domainResolver) *proxy {
+  return &proxy{c, resolver}
 }
 
 func (p *proxy) start() {
-  log.Printf("Listening on port %d",p.config.port)
-  http.HandleFunc("/", OnRequest)
+  log.Printf("Listening on port %d", p.config.port)
+  http.HandleFunc("/", p.OnRequest)
   http.ListenAndServe(fmt.Sprintf(":%d", p.config.port), nil)
 
 }
 
+func (p *proxy) OnRequest(w http.ResponseWriter, r *http.Request) {
 
-
-func OnRequest(w http.ResponseWriter, r *http.Request) {
-
-  server, found := matchingServerOf(r.Host, r.URL.String())
+  server, found := p.domainResolver.resolve(r.Host)
 
   if found {
     server.ServeHTTP(w, r)
@@ -39,19 +36,5 @@ func OnRequest(w http.ResponseWriter, r *http.Request) {
   }
 
   http.NotFound(w, r)
-}
-
-
-func ReverseProxyServer(uri string) http.Handler {
-  dest, _ := url.Parse(addProtocol(uri))
-  return httputil.NewSingleHostReverseProxy(dest)
-}
-
-func addProtocol(url string) string {
-  if matches, _ := regexp.MatchString("^\\w+://", url); !matches {
-    return fmt.Sprintf("http://%s", url)
-  }
-
-  return url
 }
 
