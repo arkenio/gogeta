@@ -2,7 +2,7 @@
 *.o
 *.a
 *.so
-
+.project
 # Folders
 _obj
 _test
