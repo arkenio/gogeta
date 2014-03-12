@@ -15,3 +15,7 @@ func (*DummyResolver) resolve(domain string) (http.Handler, bool) {
   dest, _ := url.Parse("http://localhost:8080/")
   return httputil.NewSingleHostReverseProxy(dest), true
 }
+
+func (*DummyResolver) init() {
+
+}

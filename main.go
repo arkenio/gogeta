@@ -1,22 +1,24 @@
 package main
 
 import (
-  "log"
+	"log"
 )
 
 const (
-  progname = "etcd-reverse-proxy"
+	progname = "etcd-reverse-proxy"
 )
 
 func main() {
-  log.Printf("%s starting",progname)
-  c := parseConfig()
+	log.Printf("%s starting", progname)
+	c := parseConfig()
 
-  w := NewEtcdWatcher(c)
-  w.init()
 
-  p := NewProxy(c, &DummyResolver{})
-  p.start()
+	resolver := NewEtcdResolver(c)
+	resolver.init()
+
+
+	p := NewProxy(c, resolver)
+	p.start()
 
 }
 

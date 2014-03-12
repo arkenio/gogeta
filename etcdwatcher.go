@@ -1,29 +1,29 @@
 package main
 
 import (
-  "github.com/coreos/go-etcd/etcd"
-  "log"
-  "strings"
+	"github.com/coreos/go-etcd/etcd"
+	"log"
+	"regexp"
 )
 
 type watcher struct {
-  client *etcd.Client
-  config *Config
+	client *etcd.Client
+	config *Config
+	domains map[string]*Domain
+	environments map[string]*Environment
 }
 
-func NewEtcdWatcher(config *Config) *watcher {
-  w := &watcher{}
-  w.config = config
-  w.client = etcd.NewClient([]string{config.etcdAdress})
-  return w
+func NewEtcdWatcher(config *Config,domains map[string]*Domain, envs map[string]*Environment) *watcher {
+	client := etcd.NewClient([]string{config.etcdAddress})
+	return &watcher{client, config, domains, envs}
 }
 
 /**
  * Init domains and environments.
  */
 func (w *watcher) init() {
-  w.loadAndWatch(w.config.domainPrefix, registerDomain)
-  w.loadAndWatch(w.config.envPrefix, registerEnvironment)
+	w.loadAndWatch(w.config.domainPrefix, w.registerDomain)
+	w.loadAndWatch(w.config.envPrefix, w.registerEnvironment)
 
 }
 
@@ -32,40 +32,83 @@ func (w *watcher) init() {
  * etc... The register function is passed the etcd Node that has been loaded.
  */
 func (w *watcher) loadAndWatch(etcdDir string, registerFunc func(*etcd.Node)) {
-  w.loadPrefix(etcdDir, registerFunc)
+	w.loadPrefix(etcdDir, registerFunc)
 
-  go func() {
-    updateChannel := make(chan *etcd.Response, 10)
-    w.watch(updateChannel, registerFunc)
-    w.client.Watch(etcdDir, 0, true, updateChannel, nil)
-  }()
+	go func() {
+		updateChannel := make(chan *etcd.Response, 10)
+		w.watch(updateChannel, registerFunc)
+		w.client.Watch(etcdDir, (uint64)(0), true, updateChannel, nil)
+	}()
 }
 
 func (w *watcher) loadPrefix(etcDir string, registerFunc func(*etcd.Node)) {
-  response, err := w.client.Get(etcDir, true, false)
+	response, err := w.client.Get(etcDir, true, false)
 
-  if err == nil {
-    for _, node := range response.Node.Nodes {
-      registerFunc(&node)
-    }
-  }
+	if err == nil {
+		for _, node := range response.Node.Nodes {
+			registerFunc(&node)
+		}
+	}
 }
 
 func (w *watcher) watch(updateChannel chan *etcd.Response, registerFunc func(*etcd.Node)) {
-  for {
-    response := <-updateChannel
-    registerFunc(response.Node)
-  }
+	for {
+		response := <-updateChannel
+		registerFunc(response.Node)
+	}
 }
 
-func registerDomain(node *etcd.Node) {
-  domain := strings.Split(node.Key, "/")[2]
-  log.Printf("Registering domain : %s with service %s", domain, node.Value)
-  domains[domain] = node.Value
+func (w *watcher) registerDomain(node *etcd.Node) {
+
+	domainName := w.getDomainForNode(node)
+	domainKey := w.config.domainPrefix + "/" + domainName
+	response, err := w.client.Get(domainKey, true, false)
+
+	if (err == nil) {
+		domain := &Domain{}
+		for _, node := range response.Node.Nodes {
+			switch node.Key {
+			case domainKey + "/type":
+				domain.typ = node.Value
+			case domainKey + "/value":
+				domain.value = node.Value
+			}
+		}
+		w.domains[domainName] = domain
+		log.Printf("Registering domain %s with service (%s):%s", domainName, domain.typ, domain.value)
+	}
+
+
 }
 
-func registerEnvironment(node *etcd.Node) {
-  environment := strings.Split(node.Key, "/")[2]
-  log.Printf("Registering environement : %s", environment, node.Value)
-  environments[environment] = node.Value
+func (w *watcher) getDomainForNode(node *etcd.Node) string {
+	r := regexp.MustCompile(w.config.domainPrefix + "/(.*)(/.*)*")
+	return r.FindStringSubmatch(node.Key)[1]
+}
+
+func (w *watcher) getEnvForNode(node *etcd.Node) string {
+	r := regexp.MustCompile(w.config.envPrefix + "/(.*)(/.*)*")
+	return r.FindStringSubmatch(node.Key)[1]
+}
+
+func (w *watcher) registerEnvironment(node *etcd.Node) {
+	envName := w.getEnvForNode(node)
+	envKey := w.config.envPrefix+"/"+envName
+
+	response, err := w.client.Get(envKey, true, false)
+
+	if (err == nil) {
+		env := &Environment{}
+		for _, node := range response.Node.Nodes {
+			switch node.Key {
+			case envKey + "/ip":
+				env.ip = node.Value
+			case envKey + "/port":
+				env.port = node.Value
+			}
+		}
+		w.environments[envName] = env
+		log.Printf("Registering environment %s with address : http://%s:%s/", envName, env.ip,env.port)
+
+	}
 }
