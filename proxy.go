@@ -13,7 +13,7 @@ type domainResolver interface {
 }
 
 type proxy struct {
-	config *Config
+	config         *Config
 	domainResolver domainResolver
 }
 
@@ -39,7 +39,6 @@ func (p *proxy) OnRequest(w http.ResponseWriter, r *http.Request) {
 	http.NotFound(w, r)
 }
 
-
 func hostnameOf(host string) string {
 	hostname := strings.Split(host, ":")[0]
 
@@ -49,4 +48,3 @@ func hostnameOf(host string) string {
 
 	return hostname
 }
-

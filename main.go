@@ -6,9 +6,8 @@ const (
 	progname = "etcd-reverse-proxy"
 )
 
-
 func getResolver(c *Config) domainResolver {
-	switch c.resolverType{
+	switch c.resolverType {
 	case "Dummy":
 		return &DummyResolver{}
 	case "Env":
@@ -24,7 +23,6 @@ func main() {
 
 	c := parseConfig()
 
-
 	resolver := getResolver(c)
 	resolver.init()
 
@@ -32,8 +30,3 @@ func main() {
 	p.start()
 
 }
-
-
-
-
-

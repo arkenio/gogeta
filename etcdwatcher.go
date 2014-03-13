@@ -8,9 +8,9 @@ import (
 )
 
 type watcher struct {
-	client *etcd.Client
-	config *Config
-	domains map[string]*Domain
+	client       *etcd.Client
+	config       *Config
+	domains      map[string]*Domain
 	environments map[string]*Environment
 }
 
@@ -64,7 +64,7 @@ func (w *watcher) registerDomain(node *etcd.Node) {
 	domainKey := w.config.domainPrefix + "/" + domainName
 	response, err := w.client.Get(domainKey, true, false)
 
-	if (err == nil) {
+	if err == nil {
 		domain := &Domain{}
 		for _, node := range response.Node.Nodes {
 			switch node.Key {
@@ -78,17 +78,16 @@ func (w *watcher) registerDomain(node *etcd.Node) {
 		log.Printf("Registering domain %s with service (%s):%s", domainName, domain.typ, domain.value)
 	}
 
-
 }
 
 func (w *watcher) getDomainForNode(node *etcd.Node) string {
 	r := regexp.MustCompile(w.config.domainPrefix + "/(.*)")
-	return strings.Split(r.FindStringSubmatch(node.Key)[1],"/")[0]
+	return strings.Split(r.FindStringSubmatch(node.Key)[1], "/")[0]
 }
 
 func (w *watcher) getEnvForNode(node *etcd.Node) string {
 	r := regexp.MustCompile(w.config.envPrefix + "/(.*)(/.*)*")
-	return strings.Split(r.FindStringSubmatch(node.Key)[1],"/")[0]
+	return strings.Split(r.FindStringSubmatch(node.Key)[1], "/")[0]
 }
 
 func (w *watcher) registerEnvironment(node *etcd.Node) {
@@ -97,7 +96,7 @@ func (w *watcher) registerEnvironment(node *etcd.Node) {
 
 	response, err := w.client.Get(envKey, true, false)
 
-	if (err == nil) {
+	if err == nil {
 		env := &Environment{}
 		for _, node := range response.Node.Nodes {
 			switch node.Key {

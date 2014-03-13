@@ -1,18 +1,17 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
-	"fmt"
 )
 
 type EnvResolver struct {
-	config *Config
+	config  *Config
 	watcher *watcher
-	envs map[string]*Environment
-
+	envs    map[string]*Environment
 }
 
 func NewEnvResolver(c *Config) *EnvResolver {
@@ -25,10 +24,10 @@ func (r *EnvResolver) resolve(domain string) (http.Handler, bool) {
 	envName := strings.Split(domain, ".")[0]
 
 	env := r.envs[envName]
-	if(env != nil) {
-		if (env.server == nil) {
+	if env != nil {
+		if env.server == nil {
 			uri := ""
-			if (env.port != "80") {
+			if env.port != "80" {
 				uri = fmt.Sprintf("http://%s:%s/", env.ip, env.port)
 
 			} else {
