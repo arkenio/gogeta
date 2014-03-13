@@ -4,6 +4,7 @@ import (
 	"github.com/coreos/go-etcd/etcd"
 	"log"
 	"regexp"
+	"strings"
 )
 
 type watcher struct {
@@ -13,7 +14,7 @@ type watcher struct {
 	environments map[string]*Environment
 }
 
-func NewEtcdWatcher(config *Config,domains map[string]*Domain, envs map[string]*Environment) *watcher {
+func NewEtcdWatcher(config *Config, domains map[string]*Domain, envs map[string]*Environment) *watcher {
 	client := etcd.NewClient([]string{config.etcdAddress})
 	return &watcher{client, config, domains, envs}
 }
@@ -34,11 +35,10 @@ func (w *watcher) init() {
 func (w *watcher) loadAndWatch(etcdDir string, registerFunc func(*etcd.Node)) {
 	w.loadPrefix(etcdDir, registerFunc)
 
-	go func() {
-		updateChannel := make(chan *etcd.Response, 10)
-		w.watch(updateChannel, registerFunc)
-		w.client.Watch(etcdDir, (uint64)(0), true, updateChannel, nil)
-	}()
+	updateChannel := make(chan *etcd.Response, 10)
+	go w.watch(updateChannel, registerFunc)
+	w.client.Watch(etcdDir, (uint64)(0), true, updateChannel, nil)
+
 }
 
 func (w *watcher) loadPrefix(etcDir string, registerFunc func(*etcd.Node)) {
@@ -82,18 +82,18 @@ func (w *watcher) registerDomain(node *etcd.Node) {
 }
 
 func (w *watcher) getDomainForNode(node *etcd.Node) string {
-	r := regexp.MustCompile(w.config.domainPrefix + "/(.*)(/.*)*")
-	return r.FindStringSubmatch(node.Key)[1]
+	r := regexp.MustCompile(w.config.domainPrefix + "/(.*)")
+	return strings.Split(r.FindStringSubmatch(node.Key)[1],"/")[0]
 }
 
 func (w *watcher) getEnvForNode(node *etcd.Node) string {
 	r := regexp.MustCompile(w.config.envPrefix + "/(.*)(/.*)*")
-	return r.FindStringSubmatch(node.Key)[1]
+	return strings.Split(r.FindStringSubmatch(node.Key)[1],"/")[0]
 }
 
 func (w *watcher) registerEnvironment(node *etcd.Node) {
 	envName := w.getEnvForNode(node)
-	envKey := w.config.envPrefix+"/"+envName
+	envKey := w.config.envPrefix + "/" + envName
 
 	response, err := w.client.Get(envKey, true, false)
 
@@ -108,7 +108,7 @@ func (w *watcher) registerEnvironment(node *etcd.Node) {
 			}
 		}
 		w.environments[envName] = env
-		log.Printf("Registering environment %s with address : http://%s:%s/", envName, env.ip,env.port)
+		log.Printf("Registering environment %s with address : http://%s:%s/", envName, env.ip, env.port)
 
 	}
 }
