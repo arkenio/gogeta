@@ -2,7 +2,7 @@ package main
 
 import (
   "flag"
-	"log"
+  "log"
 )
 
 type Config struct {
@@ -10,8 +10,8 @@ type Config struct {
   domainPrefix string
   envPrefix string
   etcdAddress string
+  resolverType string
 }
-
 
 func parseConfig() *Config {
   config := &Config{}
@@ -19,6 +19,7 @@ func parseConfig() *Config {
   flag.StringVar(&config.domainPrefix, "domainDir", "/nuxeo.io/domains", "etcd prefix to get domains")
   flag.StringVar(&config.envPrefix, "envDir", "/nuxeo.io/envs", "etcd prefix to get environments")
   flag.StringVar(&config.etcdAddress, "etcdAddress", "http://127.0.0.1:4001/", "etcd client host")
+  flag.StringVar(&config.resolverType, "resolverType", "IoEtcd", "type of resolver (IoEtcd|Env|Dummy)")
   flag.Parse()
 
 	log.Printf("Dumping Configuration")
@@ -26,6 +27,7 @@ func parseConfig() *Config {
 	log.Printf("  domainPrefix : %s", config.domainPrefix)
 	log.Printf("  envsPrefix : %s", config.envPrefix)
 	log.Printf("  etcdAddress : %s", config.etcdAddress)
+	log.Printf("  resolverType : %s", config.resolverType)
 
   return config
 }

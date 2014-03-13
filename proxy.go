@@ -24,12 +24,11 @@ func NewProxy(c *Config, resolver domainResolver) *proxy {
 func (p *proxy) start() {
 	log.Printf("Listening on port %d", p.config.port)
 	http.HandleFunc("/", p.OnRequest)
-	http.ListenAndServe(fmt.Sprintf(":%d", p.config.port), nil)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", p.config.port), nil))
 
 }
 
 func (p *proxy) OnRequest(w http.ResponseWriter, r *http.Request) {
-
 	server, found := p.domainResolver.resolve(hostnameOf(r.Host))
 
 	if found {

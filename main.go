@@ -1,21 +1,32 @@
 package main
 
-import (
-	"log"
-)
+import "log"
 
 const (
 	progname = "etcd-reverse-proxy"
 )
 
+
+func getResolver(c *Config) domainResolver {
+	switch c.resolverType{
+	case "Dummy":
+		return &DummyResolver{}
+	case "Env":
+		return NewEnvResolver(c)
+	default:
+		return NewEtcdResolver(c)
+	}
+}
+
 func main() {
+
 	log.Printf("%s starting", progname)
+
 	c := parseConfig()
 
 
-	resolver := NewEtcdResolver(c)
+	resolver := getResolver(c)
 	resolver.init()
-
 
 	p := NewProxy(c, resolver)
 	p.start()
