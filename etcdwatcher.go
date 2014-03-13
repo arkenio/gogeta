@@ -74,8 +74,10 @@ func (w *watcher) registerDomain(node *etcd.Node) {
 				domain.value = node.Value
 			}
 		}
-		w.domains[domainName] = domain
-		log.Printf("Registering domain %s with service (%s):%s", domainName, domain.typ, domain.value)
+		if domain.typ != "" && domain.value != "" {
+			w.domains[domainName] = domain
+			log.Printf("Registering domain %s with service (%s):%s", domainName, domain.typ, domain.value)
+		}
 	}
 
 }
@@ -106,8 +108,10 @@ func (w *watcher) registerEnvironment(node *etcd.Node) {
 				env.port = node.Value
 			}
 		}
-		w.environments[envName] = env
-		log.Printf("Registering environment %s with address : http://%s:%s/", envName, env.ip, env.port)
+		if env.ip != "" && env.port != "" {
+			w.environments[envName] = env
+			log.Printf("Registering environment %s with address : http://%s:%s/", envName, env.ip, env.port)
+		}
 
 	}
 }
