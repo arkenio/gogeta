@@ -23,8 +23,8 @@ func NewEtcdWatcher(config *Config, domains map[string]*Domain, envs map[string]
  * Init domains and environments.
  */
 func (w *watcher) init() {
-	w.loadAndWatch(w.config.domainPrefix, w.registerDomain)
-	w.loadAndWatch(w.config.envPrefix, w.registerEnvironment)
+	go w.loadAndWatch(w.config.domainPrefix, w.registerDomain)
+	go w.loadAndWatch(w.config.envPrefix, w.registerEnvironment)
 
 }
 
