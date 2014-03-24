@@ -16,6 +16,7 @@ type Domain struct {
 type Environment struct {
 	ip     string
 	port   string
+	domain string
 	server http.Handler
 }
 
@@ -41,6 +42,7 @@ func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, bool) {
 	domain := r.domains[domainName]
 	if domain != nil {
 		if domain.server == nil {
+			log.Printf("Building new HostReverseProxy for %s", domainName)
 			switch domain.typ {
 			case "iocontainer":
 				env := r.environments[domain.value]

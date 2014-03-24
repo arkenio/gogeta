@@ -106,11 +106,17 @@ func (w *watcher) registerEnvironment(node *etcd.Node) {
 				env.ip = node.Value
 			case envKey + "/port":
 				env.port = node.Value
+			case envKey + "/domain":
+				env.domain = node.Value
 			}
 		}
 		if env.ip != "" && env.port != "" {
 			w.environments[envName] = env
 			log.Printf("Registering environment %s with address : http://%s:%s/", envName, env.ip, env.port)
+			if env.domain != "" && w.domains[env.domain] != nil {
+				w.domains[env.domain].server = nil
+				log.Printf("Reset domain %s", env.domain)
+			}
 		}
 
 	}
