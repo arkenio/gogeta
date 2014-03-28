@@ -46,3 +46,7 @@ func (r *EnvResolver) resolve(domain string) (http.Handler, bool) {
 func (r *EnvResolver) init() {
 	r.watcher.loadAndWatch(r.config.envPrefix, r.watcher.registerEnvironment)
 }
+
+func (r *EnvResolver) redirectToStatusPage(domainName string) (string){
+	return ""
+}

@@ -17,3 +17,7 @@ func (*DummyResolver) resolve(domain string) (http.Handler, bool) {
 func (*DummyResolver) init() {
 
 }
+
+func (*DummyResolver) redirectToStatusPage(domainName string) (string){
+	return ""
+}

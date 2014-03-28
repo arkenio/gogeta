@@ -8,6 +8,18 @@ import (
 	"net/url"
 )
 
+const (
+		STARTING_STATUS = "starting"
+		STARTED_STATUS = "started"
+		STOPPING_STATUS = "stopping"
+		STOPPED_STATUS = "stopped"
+		ERROR_STATUS = "error"
+		NA_STATUS = "n/a"
+		STOPPED_STATUS_PAGE = "Stopped!"
+		STARTING_STATUS_PAGE = "Starting..."
+		ERROR_STATUS_PAGE = "Error!"
+)
+
 type Domain struct {
 	typ    string
 	value  string
@@ -19,6 +31,13 @@ type Environment struct {
 	port   string
 	domain string
 	server http.Handler
+	status *Status
+}
+
+type Status struct {
+	alive string
+	current string
+	expected string
 }
 
 type IoEtcdResolver struct {
@@ -66,4 +85,48 @@ func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, bool) {
 		return domain.server, true
 	}
 	return nil, false
+}
+
+func (r *IoEtcdResolver) redirectToStatusPage(domainName string) (string){
+	domain := r.domains[domainName]
+	if domain != nil {
+		env := r.environments[domain.value]
+		if env.status != nil {
+			alive := env.status.alive
+			expected := env.status.expected
+			current := env.status.current
+			switch current {
+				case STOPPED_STATUS:
+					if expected==STOPPED_STATUS {
+						return STOPPED_STATUS_PAGE
+					} else {
+						return ERROR_STATUS_PAGE
+					}
+				case STARTING_STATUS:
+					if expected==STARTED_STATUS {
+						return STARTING_STATUS_PAGE
+					} else {
+						return ERROR_STATUS_PAGE
+					}
+				case STARTED_STATUS:
+					if alive!="" {
+							if expected!=STARTED_STATUS {
+								return ERROR_STATUS_PAGE
+							}
+					} else {
+						return ERROR_STATUS_PAGE
+					}
+				case STOPPING_STATUS:
+					if expected==STOPPED_STATUS {
+						return STOPPED_STATUS_PAGE
+					} else {
+						return ERROR_STATUS_PAGE
+					}
+				// N/A
+				default:
+				  return ""
+			}
+		}
+	}
+	return ""
 }

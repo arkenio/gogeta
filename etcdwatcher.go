@@ -95,8 +95,9 @@ func (w *watcher) getEnvForNode(node *etcd.Node) string {
 func (w *watcher) registerEnvironment(node *etcd.Node) {
 	envName := w.getEnvForNode(node)
 	envKey := w.config.envPrefix + "/" + envName
+	statusKey := w.config.envPrefix + "/" + envName + "/status"
 
-	response, err := w.client.Get(envKey, true, false)
+	response, err := w.client.Get(envKey, true, true)
 
 	if err == nil {
 		env := &Environment{}
@@ -108,6 +109,18 @@ func (w *watcher) registerEnvironment(node *etcd.Node) {
 				env.port = node.Value
 			case envKey + "/domain":
 				env.domain = node.Value
+			case statusKey:
+			  env.status = &Status{}
+			  for _, subNode := range node.Nodes {
+				  switch subNode.Key {
+					case statusKey + "/alive":
+						env.status.alive = subNode.Value
+					case statusKey + "/current":
+						env.status.current = subNode.Value
+					case statusKey + "/expected":
+						env.status.expected = subNode.Value
+					}
+				}
 			}
 		}
 		if env.ip != "" && env.port != "" {
@@ -118,6 +131,9 @@ func (w *watcher) registerEnvironment(node *etcd.Node) {
 				log.Printf("Reset domain %s", env.domain)
 			}
 		}
-
+		if env.status != nil && env.status.current != "" {
+			w.environments[envName] = env
+			log.Printf("Watching environment %s status : Alive: %s - Current: %s - Expected: %s", envName, env.status.alive, env.status.current, env.status.expected)
+		}
 	}
 }
