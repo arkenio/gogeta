@@ -1,7 +1,9 @@
-etcd-reverse-proxy
-==================
+Gogeta
+======
 
-Reverse proxy based on etcd hierarchy
+Gogeta is a dynamic reverse proxy which configuration is based on [etcd](https://github.com/coreos/etcd). It provides real time dynamic reconfiguration of routes without having to restart the process.
+
+It is part of the nuxeo.io infrastructure.
 
 
 How it works

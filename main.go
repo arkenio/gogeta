@@ -3,7 +3,7 @@ package main
 import "log"
 
 const (
-	progname = "etcd-reverse-proxy"
+	progname = "gogeta"
 )
 
 func getResolver(c *Config) domainResolver {
