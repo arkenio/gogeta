@@ -39,14 +39,13 @@ Several parameters allow to configure the way the proxy behave :
     * `Dummy` : DummyResolver
     * by default : IoEtcd
 
-How to contribute
------------------
+Report & Contribute
+-------------------
 
-See this page for practical information:
-<http://doc.nuxeo.com/display/NXDOC/Nuxeo+contributors+welcome+page>
-
-This presentation will give you more insight about "the Nuxeo way":
-<http://www.slideshare.net/nuxeo/nuxeo-world-session-becoming-a-contributor-how-to-get-started>
+We are glad to welcome new developers on this initiative, and even simple usage feedback is great.
+- Ask your questions on [Nuxeo Answers](http://answers.nuxeo.com)
+- Report issues on this github repository (see [issues link](http://github.com/nuxeo/gogeta/issues) on the right)
+- Contribute: Send pull requests!
 
 
 About Nuxeo
