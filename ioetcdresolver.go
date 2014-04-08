@@ -89,7 +89,7 @@ func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, bool) {
 
 func (r *IoEtcdResolver) redirectToStatusPage(domainName string) (string){
 	domain := r.domains[domainName]
-	if domain != nil {
+	if domain != nil && domain.typ == "iocontainer" {
 		env := r.environments[domain.value]
 		if env.status != nil {
 			alive := env.status.alive
