@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"strings"
-	"html/template"
 )
 
 var page = `<html>
@@ -22,17 +22,16 @@ var content = `{{define "content"}}
 {{end}}`
 
 type Content struct {
-   Title string
-   Content string
+	Title   string
+	Content string
 }
 
 type Page struct {
-    Content *Content
+	Content *Content
 }
 
 type domainResolver interface {
-	resolve(domain string) (http.Handler, bool)
-	redirectToStatusPage(domainName string) (string)
+	resolve(domain string) (http.Handler, error)
 	init()
 }
 
@@ -45,35 +44,49 @@ func NewProxy(c *Config, resolver domainResolver) *proxy {
 	return &proxy{c, resolver}
 }
 
+
+type proxyHandler func(http.ResponseWriter, *http.Request) error
+
+func (ph proxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if err := ph(w, r); err != nil {
+		ph.OnError(w,r,err)
+	}
+}
+
+func (ph proxyHandler) OnError(w http.ResponseWriter, r *http.Request, error error) {
+	if stError, ok := error.(StatusError); ok {
+		//TODO: refactor with templates on filesystem
+		pagedata := &Page{Content: &Content{Title: "Status", Content: stError.computedStatus}}
+		tmpl, err := template.New("page").Parse(page)
+		tmpl, err = tmpl.Parse(content)
+		if err == nil {
+			tmpl.Execute(w, pagedata)
+		}
+	} else {
+		http.NotFound(w, r)
+	}
+}
+
+
+
 func (p *proxy) start() {
 	log.Printf("Listening on port %d", p.config.port)
-	http.HandleFunc("/", p.OnRequest)
+	http.Handle("/", proxyHandler(p.proxy))
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", p.config.port), nil))
 }
 
-func (p *proxy) OnRequest(w http.ResponseWriter, r *http.Request) {
+
+func (p *proxy) proxy(w http.ResponseWriter, r *http.Request) error {
 	host := hostnameOf(r.Host)
-	// Check if host is in pending, stopping or error state
-	redirect := p.domainResolver.redirectToStatusPage(host)
-	if redirect != "" {
-		pagedata := &Page{Content: &Content{Title:"Status", Content:redirect}}
-		tmpl, err := template.New("page").Parse(page)
-    tmpl, err = tmpl.Parse(content)
-		if(err==nil){
-			tmpl.Execute(w, pagedata)
-		}
-		return
-	}
-
-	server, found := p.domainResolver.resolve(host)
-
-	if found {
+	if server, err := p.domainResolver.resolve(host); err != nil {
+		return err
+	} else {
 		server.ServeHTTP(w, r)
-		return
+		return nil
 	}
-
-	http.NotFound(w, r)
 }
+
+
 
 func hostnameOf(host string) string {
 	hostname := strings.Split(host, ":")[0]

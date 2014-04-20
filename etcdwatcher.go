@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/coreos/go-etcd/etcd"
 	"log"
 	"regexp"
@@ -11,10 +12,10 @@ type watcher struct {
 	client       *etcd.Client
 	config       *Config
 	domains      map[string]*Domain
-	environments map[string]*Environment
+	environments map[string]*EnvironmentCluster
 }
 
-func NewEtcdWatcher(config *Config, domains map[string]*Domain, envs map[string]*Environment) *watcher {
+func NewEtcdWatcher(config *Config, domains map[string]*Domain, envs map[string]*EnvironmentCluster) *watcher {
 	client := etcd.NewClient([]string{config.etcdAddress})
 	return &watcher{client, config, domains, envs}
 }
@@ -32,7 +33,7 @@ func (w *watcher) init() {
  * Loads and watch an etcd directory to register objects like domains, environments
  * etc... The register function is passed the etcd Node that has been loaded.
  */
-func (w *watcher) loadAndWatch(etcdDir string, registerFunc func(*etcd.Node)) {
+func (w *watcher) loadAndWatch(etcdDir string, registerFunc func(*etcd.Node, string)) {
 	w.loadPrefix(etcdDir, registerFunc)
 
 	updateChannel := make(chan *etcd.Response, 10)
@@ -41,24 +42,23 @@ func (w *watcher) loadAndWatch(etcdDir string, registerFunc func(*etcd.Node)) {
 
 }
 
-func (w *watcher) loadPrefix(etcDir string, registerFunc func(*etcd.Node)) {
-	response, err := w.client.Get(etcDir, true, false)
-
+func (w *watcher) loadPrefix(etcDir string, registerFunc func(*etcd.Node, string)) {
+	response, err := w.client.Get(etcDir, true, true)
 	if err == nil {
-		for _, node := range response.Node.Nodes {
-			registerFunc(&node)
+		for _, serviceNode := range response.Node.Nodes {
+			registerFunc(&serviceNode, response.Action)
 		}
 	}
 }
 
-func (w *watcher) watch(updateChannel chan *etcd.Response, registerFunc func(*etcd.Node)) {
+func (w *watcher) watch(updateChannel chan *etcd.Response, registerFunc func(*etcd.Node, string)) {
 	for {
 		response := <-updateChannel
-		registerFunc(response.Node)
+		registerFunc(response.Node, response.Action)
 	}
 }
 
-func (w *watcher) registerDomain(node *etcd.Node) {
+func (w *watcher) registerDomain(node *etcd.Node, action string) {
 
 	domainName := w.getDomainForNode(node)
 	domainKey := w.config.domainPrefix + "/" + domainName
@@ -92,48 +92,83 @@ func (w *watcher) getEnvForNode(node *etcd.Node) string {
 	return strings.Split(r.FindStringSubmatch(node.Key)[1], "/")[0]
 }
 
-func (w *watcher) registerEnvironment(node *etcd.Node) {
+func (w *watcher) getEnvIndexForNode(node *etcd.Node) string {
+	r := regexp.MustCompile(w.config.envPrefix + "/(.*)(/.*)*")
+	return strings.Split(r.FindStringSubmatch(node.Key)[1], "/")[1]
+}
+
+func (w *watcher) Remove(key string) {
+
+}
+
+func (w *watcher) registerEnvironment(node *etcd.Node, action string) {
 	envName := w.getEnvForNode(node)
-	envKey := w.config.envPrefix + "/" + envName
-	statusKey := w.config.envPrefix + "/" + envName + "/status"
 
-	response, err := w.client.Get(envKey, true, true)
+	for _, indexNode := range node.Nodes {
 
-	if err == nil {
-		env := &Environment{}
-		for _, node := range response.Node.Nodes {
-			switch node.Key {
-			case envKey + "/ip":
-				env.ip = node.Value
-			case envKey + "/port":
-				env.port = node.Value
-			case envKey + "/domain":
-				env.domain = node.Value
-			case statusKey:
-			  env.status = &Status{}
-			  for _, subNode := range node.Nodes {
-				  switch subNode.Key {
-					case statusKey + "/alive":
-						env.status.alive = subNode.Value
-					case statusKey + "/current":
-						env.status.current = subNode.Value
-					case statusKey + "/expected":
-						env.status.expected = subNode.Value
+		envIndex := w.getEnvIndexForNode(&indexNode)
+		envKey := w.config.envPrefix + "/" + envName + "/" + envIndex
+		statusKey := envKey + "/status"
+
+		response, err := w.client.Get(envKey, true, true)
+
+		if err == nil {
+
+			if action == "delete" || action == "expire" {
+				w.Remove(node.Key)
+				return
+			}
+
+			if w.environments[envName] == nil {
+				w.environments[envName] = &EnvironmentCluster{}
+			}
+
+			env := &Environment{}
+
+			env.key = envIndex
+			for _, node := range response.Node.Nodes {
+				switch node.Key {
+				case envKey + "/location":
+					location := &service{}
+					err := json.Unmarshal([]byte(node.Value), location)
+					if err != nil {
+						panic(err)
+					}
+
+					env.location.Host = location.Host
+					env.location.Port = location.Port
+				case envKey + "/domain":
+					env.domain = node.Value
+
+				case statusKey:
+					env.status = &Status{}
+
+					for _, subNode := range node.Nodes {
+						switch subNode.Key {
+						case statusKey + "/alive":
+							env.status.alive = subNode.Value
+						case statusKey + "/current":
+							env.status.current = subNode.Value
+						case statusKey + "/expected":
+							env.status.expected = subNode.Value
+						}
 					}
 				}
 			}
-		}
-		if env.ip != "" && env.port != "" {
-			w.environments[envName] = env
-			log.Printf("Registering environment %s with address : http://%s:%s/", envName, env.ip, env.port)
-			if env.domain != "" && w.domains[env.domain] != nil {
-				w.domains[env.domain].server = nil
-				log.Printf("Reset domain %s", env.domain)
+
+			if env.location.Host != "" && env.location.Port != 0 {
+				w.environments[envName].Add(env)
+				log.Printf("Registering environment %s with address : http://%s:%d/", envName, env.location.Host, env.location.Port)
+				if env.domain != "" && w.domains[env.domain] != nil {
+					w.domains[env.domain].server = nil
+					log.Printf("Reset domain %s", env.domain)
+				}
 			}
-		}
-		if env.status != nil && env.status.current != "" {
-			w.environments[envName] = env
-			log.Printf("Watching environment %s status : Alive: %s - Current: %s - Expected: %s", envName, env.status.alive, env.status.current, env.status.expected)
+			if env.status != nil && env.status.current != "" {
+				w.environments[envName].Add(env)
+				log.Printf("Watching environment %s status : Alive: %s - Current: %s - Expected: %s", envName, env.status.alive, env.status.current, env.status.expected)
+			}
+			w.environments[envName].Dump("onRegister")
 		}
 	}
 }
