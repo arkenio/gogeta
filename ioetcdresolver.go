@@ -1,23 +1,29 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strconv"
 )
 
 const (
-		STARTING_STATUS = "starting"
-		STARTED_STATUS = "started"
-		STOPPING_STATUS = "stopping"
-		STOPPED_STATUS = "stopped"
-		ERROR_STATUS = "error"
-		NA_STATUS = "n/a"
-		STOPPED_STATUS_PAGE = "Stopped!"
-		STARTING_STATUS_PAGE = "Starting..."
-		ERROR_STATUS_PAGE = "Error!"
+	STARTING_STATUS      = "starting"
+	STARTED_STATUS       = "started"
+	STOPPING_STATUS      = "stopping"
+	STOPPED_STATUS       = "stopped"
+	ERROR_STATUS         = "error"
+	NA_STATUS            = "n/a"
+	STOPPED_STATUS_PAGE  = "Stopped!"
+	STARTING_STATUS_PAGE = "Starting..."
+	ERROR_STATUS_PAGE    = "Error!"
+
+	SERVICE_DOMAINTYTPE = "service"
+	URI_DOMAINTYPE      = "uri"
 )
 
 type Domain struct {
@@ -26,107 +32,120 @@ type Domain struct {
 	server http.Handler
 }
 
+type service struct {
+	Host string `json:"host"`
+	Port int    `json:"port"`
+}
+
 type Environment struct {
-	ip     string
-	port   string
-	domain string
-	server http.Handler
-	status *Status
+	key      string
+	location service
+	domain   string
+	name     string
+	server   http.Handler
+	status   *Status
+}
+
+func (r *Environment) computeStatus() string {
+
+	if r.status != nil {
+		alive := r.status.alive
+		expected := r.status.expected
+		current := r.status.current
+		switch current {
+		case STOPPED_STATUS:
+			if expected == STOPPED_STATUS {
+				return STOPPED_STATUS_PAGE
+			} else {
+				return ERROR_STATUS_PAGE
+			}
+		case STARTING_STATUS:
+			if expected == STARTED_STATUS {
+				return STARTING_STATUS_PAGE
+			} else {
+				return ERROR_STATUS_PAGE
+			}
+		case STARTED_STATUS:
+			if alive != "" {
+				if expected != STARTED_STATUS {
+					return ERROR_STATUS_PAGE
+				}
+			} else {
+				return ERROR_STATUS_PAGE
+			}
+		case STOPPING_STATUS:
+			if expected == STOPPED_STATUS {
+				return STOPPED_STATUS_PAGE
+			} else {
+				return ERROR_STATUS_PAGE
+			}
+			// N/A
+		default:
+			return ERROR_STATUS_PAGE
+		}
+	}
+
+	return ERROR_STATUS_PAGE
 }
 
 type Status struct {
-	alive string
-	current string
+	alive    string
+	current  string
 	expected string
+}
+
+type StatusError struct {
+	computedStatus string
+	status         *Status
+}
+
+func (s StatusError) Error() string {
+	return s.computedStatus
 }
 
 type IoEtcdResolver struct {
 	config       *Config
 	watcher      *watcher
 	domains      map[string]*Domain
-	environments map[string]*Environment
+	environments map[string]*EnvironmentCluster
+	watchIndex   uint64
 }
 
 func NewEtcdResolver(c *Config) *IoEtcdResolver {
 	domains := make(map[string]*Domain)
-	envs := make(map[string]*Environment)
+	envs := make(map[string]*EnvironmentCluster)
 	w := NewEtcdWatcher(c, domains, envs)
-	return &IoEtcdResolver{c, w, domains, envs}
+	return &IoEtcdResolver{c, w, domains, envs, 0}
 }
 
 func (r *IoEtcdResolver) init() {
 	r.watcher.init()
 }
 
-func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, bool) {
-	domain := r.domains[domainName]
-	if domain != nil {
-		if domain.server == nil {
-			log.Printf("Building new HostReverseProxy for %s", domainName)
-			switch domain.typ {
-			case "iocontainer":
-				env := r.environments[domain.value]
-				uri := ""
-				if env.port != "80" {
-					uri = fmt.Sprintf("http://%s:%s/", env.ip, env.port)
-
-				} else {
-					uri = fmt.Sprintf("http://%s/", env.ip)
-				}
-				dest, _ := url.Parse(uri)
-				domain.server = httputil.NewSingleHostReverseProxy(dest)
-
-			case "uri":
-				dest, _ := url.Parse(domain.value)
-				domain.server = httputil.NewSingleHostReverseProxy(dest)
-			}
-		}
-
-		return domain.server, true
-	}
-	return nil, false
+func (env *Environment) Dump() {
+	log.Printf("Dumping environment %s : ", env.name)
+	log.Printf("   domain : %s", env.domain)
+	log.Printf("   location : %s:%d", env.location.Host, env.location.Port)
 }
 
-func (r *IoEtcdResolver) redirectToStatusPage(domainName string) (string){
+func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, error) {
 	domain := r.domains[domainName]
-	if domain != nil && domain.typ == "iocontainer" {
-		env := r.environments[domain.value]
-		if env.status != nil {
-			alive := env.status.alive
-			expected := env.status.expected
-			current := env.status.current
-			switch current {
-				case STOPPED_STATUS:
-					if expected==STOPPED_STATUS {
-						return STOPPED_STATUS_PAGE
-					} else {
-						return ERROR_STATUS_PAGE
-					}
-				case STARTING_STATUS:
-					if expected==STARTED_STATUS {
-						return STARTING_STATUS_PAGE
-					} else {
-						return ERROR_STATUS_PAGE
-					}
-				case STARTED_STATUS:
-					if alive!="" {
-							if expected!=STARTED_STATUS {
-								return ERROR_STATUS_PAGE
-							}
-					} else {
-						return ERROR_STATUS_PAGE
-					}
-				case STOPPING_STATUS:
-					if expected==STOPPED_STATUS {
-						return STOPPED_STATUS_PAGE
-					} else {
-						return ERROR_STATUS_PAGE
-					}
-				// N/A
-				default:
-				  return ""
+	if domain != nil {
+		switch domain.typ {
+		case SERVICE_DOMAINTYTPE:
+			if env, err := r.environments[domain.value].Next(); err == nil {
+				addr := net.JoinHostPort(env.location.Host, strconv.Itoa(env.location.Port))
+				uri := fmt.Sprintf("http://%s/", addr)
+				dest, _ := url.Parse(uri)
+				return httputil.NewSingleHostReverseProxy(dest), nil
+			} else {
+				return nil, err
 			}
+		case URI_DOMAINTYPE:
+			dest, _ := url.Parse(domain.value)
+			return httputil.NewSingleHostReverseProxy(dest), nil
 		}
+
 	}
-	return ""
+	return nil, errors.New("Domain not found")
 }

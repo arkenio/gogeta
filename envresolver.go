@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
@@ -11,35 +12,34 @@ import (
 type EnvResolver struct {
 	config  *Config
 	watcher *watcher
-	envs    map[string]*Environment
+	envs    map[string]*EnvironmentCluster
 }
 
 func NewEnvResolver(c *Config) *EnvResolver {
-	envs := make(map[string]*Environment)
+	envs := make(map[string]*EnvironmentCluster)
 	w := NewEtcdWatcher(c, nil, envs)
 	return &EnvResolver{c, w, envs}
 }
 
-func (r *EnvResolver) resolve(domain string) (http.Handler, bool) {
+func (r *EnvResolver) resolve(domain string) (http.Handler, error) {
 	envName := strings.Split(domain, ".")[0]
 
-	env := r.envs[envName]
-	if env != nil {
-		if env.server == nil {
-			uri := ""
-			if env.port != "80" {
-				uri = fmt.Sprintf("http://%s:%s/", env.ip, env.port)
+	envTree := r.envs[envName]
+	if envTree != nil {
 
-			} else {
-				uri = fmt.Sprintf("http://%s/", env.ip)
+		if env, err := envTree.Next(); err != nil {
+			if env.server == nil {
+				uri := ""
+				uri = fmt.Sprintf("http://%s:%d/", env.location.Host, env.location.Port)
+				dest, _ := url.Parse(uri)
+				env.server = httputil.NewSingleHostReverseProxy(dest)
 			}
-			dest, _ := url.Parse(uri)
-			env.server = httputil.NewSingleHostReverseProxy(dest)
+			return env.server, nil
 		}
-		return env.server, true
+
 	}
 
-	return nil, false
+	return nil, errors.New("Unable to resolve")
 
 }
 
@@ -47,6 +47,6 @@ func (r *EnvResolver) init() {
 	r.watcher.loadAndWatch(r.config.envPrefix, r.watcher.registerEnvironment)
 }
 
-func (r *EnvResolver) redirectToStatusPage(domainName string) (string){
+func (r *EnvResolver) redirectToStatusPage(domainName string) string {
 	return ""
 }
