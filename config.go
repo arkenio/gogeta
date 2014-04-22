@@ -11,6 +11,7 @@ type Config struct {
 	envPrefix    string
 	etcdAddress  string
 	resolverType string
+	templateDir  string
 }
 
 func parseConfig() *Config {
@@ -20,6 +21,7 @@ func parseConfig() *Config {
 	flag.StringVar(&config.envPrefix, "envDir", "/nuxeo.io/envs", "etcd prefix to get environments")
 	flag.StringVar(&config.etcdAddress, "etcdAddress", "http://127.0.0.1:4001/", "etcd client host")
 	flag.StringVar(&config.resolverType, "resolverType", "IoEtcd", "type of resolver (IoEtcd|Env|Dummy)")
+	flag.StringVar(&config.templateDir, "templateDir","/var/www/gogeta", "Template directory")
 	flag.Parse()
 
 	log.Printf("Dumping Configuration")
@@ -28,6 +30,7 @@ func parseConfig() *Config {
 	log.Printf("  envsPrefix : %s", config.envPrefix)
 	log.Printf("  etcdAddress : %s", config.etcdAddress)
 	log.Printf("  resolverType : %s", config.resolverType)
+	log.Printf("  templateDir: %s", config.templateDir)
 
 	return config
 }

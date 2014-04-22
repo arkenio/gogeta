@@ -18,10 +18,6 @@ const (
 	STOPPED_STATUS       = "stopped"
 	ERROR_STATUS         = "error"
 	NA_STATUS            = "n/a"
-	STOPPED_STATUS_PAGE  = "Stopped!"
-	STARTING_STATUS_PAGE = "Starting..."
-	ERROR_STATUS_PAGE    = "Error!"
-
 	SERVICE_DOMAINTYTPE = "service"
 	URI_DOMAINTYPE      = "uri"
 )
@@ -55,37 +51,38 @@ func (r *Environment) computeStatus() string {
 		switch current {
 		case STOPPED_STATUS:
 			if expected == STOPPED_STATUS {
-				return STOPPED_STATUS_PAGE
+				return STOPPED_STATUS
 			} else {
-				return ERROR_STATUS_PAGE
+				return ERROR_STATUS
 			}
 		case STARTING_STATUS:
 			if expected == STARTED_STATUS {
-				return STARTING_STATUS_PAGE
+				return STARTING_STATUS
 			} else {
-				return ERROR_STATUS_PAGE
+				return ERROR_STATUS
 			}
 		case STARTED_STATUS:
 			if alive != "" {
 				if expected != STARTED_STATUS {
-					return ERROR_STATUS_PAGE
+					return ERROR_STATUS
 				}
+				return STARTED_STATUS
 			} else {
-				return ERROR_STATUS_PAGE
+				return ERROR_STATUS
 			}
 		case STOPPING_STATUS:
 			if expected == STOPPED_STATUS {
-				return STOPPED_STATUS_PAGE
+				return STOPPED_STATUS
 			} else {
-				return ERROR_STATUS_PAGE
+				return ERROR_STATUS
 			}
 			// N/A
 		default:
-			return ERROR_STATUS_PAGE
+			return ERROR_STATUS
 		}
 	}
 
-	return ERROR_STATUS_PAGE
+	return ERROR_STATUS
 }
 
 type Status struct {
