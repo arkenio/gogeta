@@ -2,33 +2,10 @@ package main
 
 import (
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"strings"
 )
-
-var page = `<html>
-  <body>
-    {{template "content" .Content}}
-  </body>
-</html>`
-
-var content = `{{define "content"}}
-<div>
-   <p>{{.Title}}</p>
-   <p>{{.Content}}</p>
-</div>
-{{end}}`
-
-type Content struct {
-	Title   string
-	Content string
-}
-
-type Page struct {
-	Content *Content
-}
 
 type domainResolver interface {
 	resolve(domain string) (http.Handler, error)
@@ -45,25 +22,21 @@ func NewProxy(c *Config, resolver domainResolver) *proxy {
 }
 
 
-type proxyHandler func(http.ResponseWriter, *http.Request) error
+type proxyHandler func(http.ResponseWriter, *http.Request) (*Config, error)
 
 func (ph proxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if err := ph(w, r); err != nil {
-		ph.OnError(w,r,err)
+	if c,err := ph(w, r); err != nil {
+		ph.OnError(w,r,err,c)
 	}
 }
 
-func (ph proxyHandler) OnError(w http.ResponseWriter, r *http.Request, error error) {
+func (ph proxyHandler) OnError(w http.ResponseWriter, r *http.Request, error error, c *Config) {
 	if stError, ok := error.(StatusError); ok {
-		//TODO: refactor with templates on filesystem
-		pagedata := &Page{Content: &Content{Title: "Status", Content: stError.computedStatus}}
-		tmpl, err := template.New("page").Parse(page)
-		tmpl, err = tmpl.Parse(content)
-		if err == nil {
-			tmpl.Execute(w, pagedata)
-		}
+		sp := &StatusPage{c,stError}
+		sp.serve(w,r)
 	} else {
-		http.NotFound(w, r)
+		sp := &StatusPage{c,StatusError{"notfound", nil}}
+		sp.serve(w,r)
 	}
 }
 
@@ -71,18 +44,19 @@ func (ph proxyHandler) OnError(w http.ResponseWriter, r *http.Request, error err
 
 func (p *proxy) start() {
 	log.Printf("Listening on port %d", p.config.port)
+	http.Handle("/__static__/", http.FileServer(http.Dir(p.config.templateDir)))
 	http.Handle("/", proxyHandler(p.proxy))
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", p.config.port), nil))
 }
 
 
-func (p *proxy) proxy(w http.ResponseWriter, r *http.Request) error {
+func (p *proxy) proxy(w http.ResponseWriter, r *http.Request) (*Config, error) {
 	host := hostnameOf(r.Host)
 	if server, err := p.domainResolver.resolve(host); err != nil {
-		return err
+		return p.config, err
 	} else {
 		server.ServeHTTP(w, r)
-		return nil
+		return p.config, nil
 	}
 }
 
