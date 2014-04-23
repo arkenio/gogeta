@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// A watcher loads and watch the etcd hierarchy for domains and services.
 type watcher struct {
 	client       *etcd.Client
 	config       *Config
@@ -15,24 +16,24 @@ type watcher struct {
 	environments map[string]*EnvironmentCluster
 }
 
+
+// Constructor for a new watcher
 func NewEtcdWatcher(config *Config, domains map[string]*Domain, envs map[string]*EnvironmentCluster) *watcher {
 	client := etcd.NewClient([]string{config.etcdAddress})
 	return &watcher{client, config, domains, envs}
 }
 
-/**
- * Init domains and environments.
- */
+
+//Init domains and environments.
 func (w *watcher) init() {
 	go w.loadAndWatch(w.config.domainPrefix, w.registerDomain)
 	go w.loadAndWatch(w.config.envPrefix, w.registerEnvironment)
 
 }
 
-/**
- * Loads and watch an etcd directory to register objects like domains, environments
- * etc... The register function is passed the etcd Node that has been loaded.
- */
+
+// Loads and watch an etcd directory to register objects like domains, environments
+// etc... The register function is passed the etcd Node that has been loaded.
 func (w *watcher) loadAndWatch(etcdDir string, registerFunc func(*etcd.Node, string)) {
 	w.loadPrefix(etcdDir, registerFunc)
 
@@ -115,18 +116,21 @@ func (w *watcher) registerEnvironment(node *etcd.Node, action string) {
 
 		if err == nil {
 
-			if action == "delete" || action == "expire" {
-				w.Remove(node.Key)
-				return
-			}
 
 			if w.environments[envName] == nil {
 				w.environments[envName] = &EnvironmentCluster{}
 			}
 
 			env := &Environment{}
-
 			env.key = envIndex
+
+
+			if action == "delete" || action == "expire" {
+				w.Remove(env.key)
+				return
+			}
+
+
 			for _, node := range response.Node.Nodes {
 				switch node.Key {
 				case envKey + "/location":

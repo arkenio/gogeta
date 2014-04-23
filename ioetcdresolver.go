@@ -12,12 +12,6 @@ import (
 )
 
 const (
-	STARTING_STATUS      = "starting"
-	STARTED_STATUS       = "started"
-	STOPPING_STATUS      = "stopping"
-	STOPPED_STATUS       = "stopped"
-	ERROR_STATUS         = "error"
-	NA_STATUS            = "n/a"
 	SERVICE_DOMAINTYTPE = "service"
 	URI_DOMAINTYPE      = "uri"
 )
@@ -42,63 +36,7 @@ type Environment struct {
 	status   *Status
 }
 
-func (r *Environment) computeStatus() string {
 
-	if r.status != nil {
-		alive := r.status.alive
-		expected := r.status.expected
-		current := r.status.current
-		switch current {
-		case STOPPED_STATUS:
-			if expected == STOPPED_STATUS {
-				return STOPPED_STATUS
-			} else {
-				return ERROR_STATUS
-			}
-		case STARTING_STATUS:
-			if expected == STARTED_STATUS {
-				return STARTING_STATUS
-			} else {
-				return ERROR_STATUS
-			}
-		case STARTED_STATUS:
-			if alive != "" {
-				if expected != STARTED_STATUS {
-					return ERROR_STATUS
-				}
-				return STARTED_STATUS
-			} else {
-				return ERROR_STATUS
-			}
-		case STOPPING_STATUS:
-			if expected == STOPPED_STATUS {
-				return STOPPED_STATUS
-			} else {
-				return ERROR_STATUS
-			}
-			// N/A
-		default:
-			return ERROR_STATUS
-		}
-	}
-
-	return ERROR_STATUS
-}
-
-type Status struct {
-	alive    string
-	current  string
-	expected string
-}
-
-type StatusError struct {
-	computedStatus string
-	status         *Status
-}
-
-func (s StatusError) Error() string {
-	return s.computedStatus
-}
 
 type IoEtcdResolver struct {
 	config       *Config
@@ -129,6 +67,7 @@ func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, error) {
 	domain := r.domains[domainName]
 	if domain != nil {
 		switch domain.typ {
+
 		case SERVICE_DOMAINTYTPE:
 			if env, err := r.environments[domain.value].Next(); err == nil {
 				addr := net.JoinHostPort(env.location.Host, strconv.Itoa(env.location.Port))
