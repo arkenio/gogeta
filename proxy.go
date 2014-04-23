@@ -25,6 +25,14 @@ func NewProxy(c *Config, resolver domainResolver) *proxy {
 type proxyHandler func(http.ResponseWriter, *http.Request) (*Config, error)
 
 func (ph proxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	defer func() {
+		if r:=recover();r!=nil {
+			http.Error(w,"An error occured serving request",500)
+			log.Panicln("Recovered from error", r)
+		}
+	}()
+
 	if c,err := ph(w, r); err != nil {
 		ph.OnError(w,r,err,c)
 	}
