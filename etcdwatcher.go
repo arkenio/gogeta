@@ -46,7 +46,7 @@ func (w *watcher) loadPrefix(etcDir string, registerFunc func(*etcd.Node)) {
 
 	if err == nil {
 		for _, node := range response.Node.Nodes {
-			registerFunc(&node)
+			registerFunc(node)
 		}
 	}
 }
