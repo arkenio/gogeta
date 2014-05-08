@@ -27,11 +27,11 @@ func (cl *EnvironmentCluster) Next() (*Environment, error) {
 		cl.lastIndex = index
 
 		instance = cl.instances[index]
-		if(instance.status.compute() == STARTED_STATUS) {
-			return instance,nil
+		if (instance.status.compute() == STARTED_STATUS) {
+			return instance, nil
 		}
 	}
-	log.Printf("No instance started for %s",instance.domain)
+	log.Printf("No instance started for %s", instance.domain)
 	lastStatus := instance.status
 	return nil, StatusError{instance.status.compute(), lastStatus }
 }
@@ -48,6 +48,8 @@ func (cl *EnvironmentCluster) Remove(key string) {
 	cl.instances = append(cl.instances[:match], cl.instances[match+1:]...)
 	cl.Dump("remove")
 }
+
+
 
 func (cl *EnvironmentCluster) Add(env *Environment) {
 	for i, v := range cl.instances {

@@ -36,7 +36,6 @@ func (r *EnvResolver) resolve(domain string) (http.Handler, error) {
 			}
 			return env.server, nil
 		}
-
 	}
 
 	return nil, errors.New("Unable to resolve")
