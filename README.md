@@ -1,5 +1,10 @@
+
+
+
 Gogeta
 ======
+
+[![Build Status](https://travis-ci.org/nuxeo/gogeta.png?branch=master)](https://travis-ci.org/nuxeo/gogeta)
 
 Gogeta is a dynamic reverse proxy which configuration is based on [etcd](https://github.com/coreos/etcd). It provides real time dynamic reconfiguration of routes without having to restart the process.
 
