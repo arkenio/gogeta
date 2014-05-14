@@ -100,6 +100,7 @@ func (sp *StatusPage) serve(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFiles(templateDir+"/main.tpl", templateDir+"/body_"+sp.error.computedStatus+".tpl")
 	if err != nil {
 		http.Error(w, "Unable to serve page : " + sp.error.computedStatus, code)
+
 		return
 	}
 

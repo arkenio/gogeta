@@ -9,6 +9,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"strconv"
+
+	"github.com/golang/glog"
 )
 
 const (
@@ -36,21 +38,21 @@ type Environment struct {
 	status   *Status
 }
 
-
-
 type IoEtcdResolver struct {
-	config       *Config
-	watcher      *watcher
-	domains      map[string]*Domain
-	environments map[string]*EnvironmentCluster
-	watchIndex   uint64
+	config          *Config
+	watcher         *watcher
+	domains         map[string]*Domain
+	environments    map[string]*EnvironmentCluster
+	dest2ProxyCache map[string]http.Handler
+	watchIndex      uint64
 }
 
 func NewEtcdResolver(c *Config) *IoEtcdResolver {
 	domains := make(map[string]*Domain)
 	envs := make(map[string]*EnvironmentCluster)
+	dest2ProxyCache := make(map[string]http.Handler)
 	w := NewEtcdWatcher(c, domains, envs)
-	return &IoEtcdResolver{c, w, domains, envs, 0}
+	return &IoEtcdResolver{c, w, domains, envs, dest2ProxyCache, 0}
 }
 
 func (r *IoEtcdResolver) init() {
@@ -64,6 +66,7 @@ func (env *Environment) Dump() {
 }
 
 func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, error) {
+	glog.V(5).Infof("Looking for doamin : %s ", domainName)
 	domain := r.domains[domainName]
 	if domain != nil {
 		switch domain.typ {
@@ -72,16 +75,25 @@ func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, error) {
 			if env, err := r.environments[domain.value].Next(); err == nil {
 				addr := net.JoinHostPort(env.location.Host, strconv.Itoa(env.location.Port))
 				uri := fmt.Sprintf("http://%s/", addr)
-				dest, _ := url.Parse(uri)
-				return httputil.NewSingleHostReverseProxy(dest), nil
+
+				return r.getOrCreateProxyFor(uri),nil
+
 			} else {
 				return nil, err
 			}
 		case URI_DOMAINTYPE:
-			dest, _ := url.Parse(domain.value)
-			return httputil.NewSingleHostReverseProxy(dest), nil
+			return r.getOrCreateProxyFor(domain.value),nil
 		}
 
 	}
+	glog.V(5).Infof("Domain %s not found", domainName)
 	return nil, errors.New("Domain not found")
+}
+
+func (r *IoEtcdResolver) getOrCreateProxyFor(uri string) (http.Handler){
+	if _, ok := r.dest2ProxyCache[uri];  !ok {
+		dest, _ := url.Parse(uri)
+		r.dest2ProxyCache[uri] = httputil.NewSingleHostReverseProxy(dest)
+	}
+	return r.dest2ProxyCache[uri]
 }

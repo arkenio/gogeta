@@ -49,14 +49,20 @@ func (w *watcher) loadPrefix(etcDir string, registerFunc func(*etcd.Node, string
 		for _, serviceNode := range response.Node.Nodes {
 			registerFunc(serviceNode, response.Action)
 
+
 		}
 	}
+
+
 }
 
 func (w *watcher) watch(updateChannel chan *etcd.Response, registerFunc func(*etcd.Node, string)) {
 	for {
 		response := <-updateChannel
-		registerFunc(response.Node, response.Action)
+		if(response != nil) {
+			registerFunc(response.Node, response.Action)
+		}
+
 	}
 }
 
