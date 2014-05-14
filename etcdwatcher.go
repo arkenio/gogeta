@@ -111,8 +111,10 @@ func (w *watcher) Remove(key string) {
 
 func (w *watcher) registerEnvironment(node *etcd.Node, action string) {
 	envName := w.getEnvForNode(node)
+	// Get service's root node instead of changed node.
+	envNode, err := w.client.Get(w.config.envPrefix + "/" + envName, true, true)
 
-	for _, indexNode := range node.Nodes {
+	for _, indexNode := range envNode.Node.Nodes {
 
 		envIndex := w.getEnvIndexForNode(indexNode)
 		envKey := w.config.envPrefix + "/" + envName + "/" + envIndex
