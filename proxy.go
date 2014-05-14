@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"github.com/golang/glog"
+//	"github.com/golang/glog"
 )
 
 type domainResolver interface {
