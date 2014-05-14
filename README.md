@@ -25,13 +25,13 @@ is to use the IoEtcdResolver. For instance, when running gogeta like this :
 Here is the workflow of the request
   * client asks for mycustomdomain.com
   * proxy looks at `/domains/mycustomdomain.com/[type,value]`
-  * if type is io `service` we look for `/services/{value}/1/location` which value is in the form
+  * if `type` is `service` we look for `/services/{value}/1/location` which value is in the form
 
         {"host":"172.13.4.3","port":42567}
 
   * the request is proxied to `http://{host}:{port}/`
 
-  * if type is uri
+  * if `type` is uri
   * the request is proxied to the value of `/domains/mycustomdomain.com/value`
 
 
@@ -43,6 +43,16 @@ key part :
 
 Gogeta will loadbalance the requests on those two instances using a round robin implementation.
 
+
+Sample configuration
+--------------------
+
+To summarize, here are the keys needed to proxy `customdomain.com` to `172.41.4.5:42654`
+
+
+    /services/myService/location = {"host":"172.41.4.5", "port": 42654}
+    /domains/mycustomdomain.com/type = service
+    /domains/mycustomdomain.com/value = myService
 
 
 Service Status
