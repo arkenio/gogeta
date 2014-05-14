@@ -27,7 +27,7 @@ func (cl *EnvironmentCluster) Next() (*Environment, error) {
 		cl.lastIndex = index
 
 		instance = cl.instances[index]
-		if (instance.status.compute() == STARTED_STATUS) {
+		if (instance.status == nil || instance.status.compute() == STARTED_STATUS) {
 			return instance, nil
 		}
 	}

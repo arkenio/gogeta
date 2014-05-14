@@ -91,6 +91,21 @@ func Test_cluster(t *testing.T) {
 
 			})
 		})
+
+		Convey("When an environment has no status", func() {
+			e := getEnvironment("1", "nxio-0001", true)
+			e.status = nil
+
+			cluster.Add(e)
+
+			Convey("Then it should handle it as running", func() {
+
+				env, err := cluster.Next()
+				So(err, ShouldBeNil)
+				So(env.name, ShouldEqual, "nxio-0001")
+
+			})
+		})
 	})
 
 }
