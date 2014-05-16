@@ -3,7 +3,7 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <title>Nuxeo.io - Something went wrong</title>
+        <title>Nuxeo.io</title>
         <style>
             * {
              box-sizing: border-box;
