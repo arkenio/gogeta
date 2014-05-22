@@ -2,10 +2,9 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
-//	"github.com/golang/glog"
+	"github.com/golang/glog"
 )
 
 type domainResolver interface {
@@ -30,7 +29,7 @@ func (ph proxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if r:=recover();r!=nil {
 			http.Error(w,"An error occured serving request",500)
-			log.Panicln("Recovered from error", r)
+			glog.Errorf("Recovered from error : %s", r)
 		}
 	}()
 
@@ -52,10 +51,10 @@ func (ph proxyHandler) OnError(w http.ResponseWriter, r *http.Request, error err
 
 
 func (p *proxy) start() {
-	log.Printf("Listening on port %d", p.config.port)
+	glog.Infof("Listening on port %d", p.config.port)
 	http.Handle("/__static__/", http.FileServer(http.Dir(p.config.templateDir)))
 	http.Handle("/", proxyHandler(p.proxy))
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", p.config.port), nil))
+	http.ListenAndServe(fmt.Sprintf(":%d", p.config.port), nil)
 }
 
 

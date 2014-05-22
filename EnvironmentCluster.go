@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"log"
 	"sync"
 	"github.com/golang/glog"
 )
@@ -79,6 +78,6 @@ func (cl *EnvironmentCluster) Add(env *Environment) {
 
 func (cl *EnvironmentCluster) Dump(action string) {
 	for _, v := range cl.instances {
-		log.Printf("Dump after %s %s -> %s:%d", action, v.key, v.location.Host, v.location.Port)
+		glog.Infof("Dump after %s %s -> %s:%d", action, v.key, v.location.Host, v.location.Port)
 	}
 }

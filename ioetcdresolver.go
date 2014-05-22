@@ -21,7 +21,6 @@ const (
 type Domain struct {
 	typ    string
 	value  string
-	server http.Handler
 }
 
 type service struct {
@@ -34,7 +33,6 @@ type Environment struct {
 	location service
 	domain   string
 	name     string
-	server   http.Handler
 	status   *Status
 }
 
