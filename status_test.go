@@ -62,6 +62,16 @@ func Test_status(t *testing.T) {
 
 		})
 
+		Convey("When status is nil", func() {
+			var status *Status
+			status = nil
+
+			Convey("Then the computed status should be started", func() {
+				So(status.compute(), ShouldEqual, STARTED_STATUS)
+			})
+
+		})
+
 	})
 
 }

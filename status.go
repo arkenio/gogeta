@@ -70,7 +70,7 @@ func (s *Status) compute() string {
 		}
 	}
 
-	return ERROR_STATUS
+	return STARTED_STATUS
 }
 
 
