@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/coreos/go-etcd/etcd"
 	"github.com/golang/glog"
-	"log"
 	"regexp"
 	"strings"
 )
@@ -88,35 +87,13 @@ func (w *watcher) registerDomain(node *etcd.Node, action string) {
 		}
 		if domain.typ != "" && domain.value != "" {
 			w.domains[domainName] = domain
-			log.Printf("Registering domain %s with service (%s):%s", domainName, domain.typ, domain.value)
+
 		}
 	}
-	w.DumpDomains()
 
 }
 
-func (w *watcher) DumpDomains() {
-	glog.V(5).Info("Dumping domains")
-	for k, v := range w.domains {
-		glog.V(5).Infof(" - %s -> (%s) %s", k, v.typ, v.value)
-	}
-}
 
-func (w *watcher) DumpEnvs() {
-	glog.V(5).Info("Dumping environments")
-	for k, v := range w.environments {
-
-		env, err := v.Next()
-		if err != nil {
-			glog.V(5).Infof(" - %s : ", k)
-			glog.V(5).Infof("       UNAVAILABLE")
-		}
-
-		glog.V(5).Infof(" - %s : ", k)
-		glog.V(5).Infof("    location : %s:%d", env.location.Host, env.location.Port)
-		glog.V(5).Infof("    status : %s", env.status.compute())
-	}
-}
 
 func (w *watcher) RemoveDomain(key string) {
 	delete(w.domains, key)
@@ -148,7 +125,6 @@ func (w *watcher) registerEnvironment(node *etcd.Node, action string) {
 	// Get service's root node instead of changed node.
 	envNode, _ := w.client.Get(w.config.envPrefix+"/"+envName, true, true)
 
-	glog.V(5).Infof("%s env %s", action, envName)
 	for _, indexNode := range envNode.Node.Nodes {
 
 		envIndex := w.getEnvIndexForNode(indexNode)
@@ -201,20 +177,17 @@ func (w *watcher) registerEnvironment(node *etcd.Node, action string) {
 				}
 			}
 
-			if env.location.Host != "" && env.location.Port != 0 {
-				w.environments[envName].Add(env)
-				log.Printf("Registering environment %s with address : http://%s:%d/", envName, env.location.Host, env.location.Port)
-				if env.domain != "" && w.domains[env.domain] != nil {
-					w.domains[env.domain].server = nil
-					log.Printf("Reset domain %s", env.domain)
+			actualEnv := w.environments[envName].Get(env.key)
+
+			if(!actualEnv.equals(env)) {
+
+				if env.location.Host != "" && env.location.Port != 0 {
+					w.environments[envName].Add(env)
+					glog.Infof("Registering environment %s with address : http://%s:%d/", envName, env.location.Host, env.location.Port)
+
 				}
+
 			}
-			if env.status != nil && env.status.current != "" {
-				w.environments[envName].Add(env)
-				log.Printf("Watching environment %s status : Alive: %s - Current: %s - Expected: %s", envName, env.status.alive, env.status.current, env.status.expected)
-			}
-			w.environments[envName].Dump("onRegister")
 		}
-		w.DumpEnvs()
 	}
 }

@@ -49,7 +49,15 @@ func (cl *EnvironmentCluster) Remove(key string) {
 	cl.Dump("remove")
 }
 
-
+// Get an environment by its key (index). Returns nil if not found.
+func (cl *EnvironmentCluster) Get(key string) *Environment {
+	for i, v := range cl.instances {
+		if v.key == key {
+			return cl.instances[i]
+		}
+	}
+	return nil
+}
 
 func (cl *EnvironmentCluster) Add(env *Environment) {
 	for i, v := range cl.instances {

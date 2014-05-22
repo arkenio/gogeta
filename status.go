@@ -21,6 +21,15 @@ type Status struct {
 	expected string
 }
 
+func (s *Status) equals(other *Status) bool {
+	if(s == nil && other == nil) {
+		return true
+	}
+	return s!= nil && other != nil && s.alive == other.alive &&
+	s.current == other.current &&
+	s.expected == other.expected
+}
+
 func (s *Status) compute() string {
 
 	if s != nil {

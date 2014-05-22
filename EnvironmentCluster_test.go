@@ -46,6 +46,7 @@ func Test_cluster(t *testing.T) {
 				So(env.key, ShouldEqual, firstKey)
 
 			})
+
 		})
 
 		Convey("When the cluster contains several environments", func() {
@@ -75,6 +76,17 @@ func Test_cluster(t *testing.T) {
 				}
 			})
 
+			Convey("Then it can get each environment by its key", func() {
+
+				env := cluster.Get("1")
+				So(env.key, ShouldEqual, "1")
+				So(env.status.current, ShouldEqual, "started")
+
+				env = cluster.Get("2")
+				So(env.key, ShouldEqual, "2")
+				So(env.status.current, ShouldEqual, "stopped")
+			})
+
 		})
 
 		Convey("When removing a key to a cluster", func() {
@@ -92,22 +104,74 @@ func Test_cluster(t *testing.T) {
 			})
 		})
 
-		Convey("When an environment has no status", func() {
-			e := getEnvironment("1", "nxio-0001", true)
-			e.status = nil
-
-			cluster.Add(e)
-
-			Convey("Then it should handle it as running", func() {
-
-				env, err := cluster.Next()
-				So(err, ShouldBeNil)
-				So(env.name, ShouldEqual, "nxio-0001")
-
-			})
-		})
 	})
 
+}
+
+func Test_Environment(t *testing.T) {
+	var env1, env2 *Environment
+
+	Convey("Given two environment with same values", t, func() {
+		env1 = getEnvironment("1", "nxio-0001", true)
+		env2 = getEnvironment("1", "nxio-0001", true)
+		Convey("When i dont change anything", func() {
+			Convey("Then they are equal", func() {
+
+				So(env1.equals(env2), ShouldEqual, true)
+
+			})
+
+		})
+
+		Convey("When host is not the same", func() {
+			env2.location.Host = "otherhost"
+			Convey("Then they are equal", func() {
+
+				So(env1.equals(env2), ShouldEqual, false)
+
+			})
+
+		})
+
+		Convey("When port is not the same", func() {
+			env2.location.Port = 9090
+			Convey("Then they are equal", func() {
+
+				So(env1.equals(env2), ShouldEqual, false)
+
+			})
+
+		})
+
+		Convey("When current status is not the same", func() {
+			env2.status.current = "other"
+			Convey("Then they are equal", func() {
+
+				So(env1.equals(env2), ShouldEqual, false)
+
+			})
+
+		})
+
+		Convey("When expected status is not the same", func() {
+			env2.status.expected = "other"
+			Convey("Then they are equal", func() {
+
+				So(env1.equals(env2), ShouldEqual, false)
+
+			})
+
+		})
+		Convey("When alive status is not the same", func() {
+			env2.status.alive = "other"
+			Convey("Then they are equal", func() {
+
+				So(env1.equals(env2), ShouldEqual, false)
+
+			})
+
+		})
+	})
 }
 
 func getEnvironment(key string, name string, active bool) *Environment {

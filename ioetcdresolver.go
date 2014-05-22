@@ -65,8 +65,16 @@ func (env *Environment) Dump() {
 	log.Printf("   location : %s:%d", env.location.Host, env.location.Port)
 }
 
+func (env *Environment) equals(other *Environment) bool {
+
+	return env != nil && other != nil &&
+		env.location.Host == other.location.Host &&
+		env.location.Port == other.location.Port &&
+		env.status.equals(other.status)
+}
+
 func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, error) {
-	glog.V(5).Infof("Looking for doamin : %s ", domainName)
+	glog.V(5).Infof("Looking for domain : %s ", domainName)
 	domain := r.domains[domainName]
 	if domain != nil {
 		switch domain.typ {
@@ -76,13 +84,13 @@ func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, error) {
 				addr := net.JoinHostPort(env.location.Host, strconv.Itoa(env.location.Port))
 				uri := fmt.Sprintf("http://%s/", addr)
 
-				return r.getOrCreateProxyFor(uri),nil
+				return r.getOrCreateProxyFor(uri), nil
 
 			} else {
 				return nil, err
 			}
 		case URI_DOMAINTYPE:
-			return r.getOrCreateProxyFor(domain.value),nil
+			return r.getOrCreateProxyFor(domain.value), nil
 		}
 
 	}
@@ -90,8 +98,8 @@ func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, error) {
 	return nil, errors.New("Domain not found")
 }
 
-func (r *IoEtcdResolver) getOrCreateProxyFor(uri string) (http.Handler){
-	if _, ok := r.dest2ProxyCache[uri];  !ok {
+func (r *IoEtcdResolver) getOrCreateProxyFor(uri string) http.Handler {
+	if _, ok := r.dest2ProxyCache[uri]; !ok {
 		dest, _ := url.Parse(uri)
 		r.dest2ProxyCache[uri] = httputil.NewSingleHostReverseProxy(dest)
 	}
