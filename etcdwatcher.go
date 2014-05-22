@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/coreos/go-etcd/etcd"
+	"github.com/golang/glog"
 	"log"
 	"regexp"
 	"strings"
@@ -16,13 +17,11 @@ type watcher struct {
 	environments map[string]*EnvironmentCluster
 }
 
-
 // Constructor for a new watcher
 func NewEtcdWatcher(config *Config, domains map[string]*Domain, envs map[string]*EnvironmentCluster) *watcher {
 	client := etcd.NewClient([]string{config.etcdAddress})
 	return &watcher{client, config, domains, envs}
 }
-
 
 //Init domains and environments.
 func (w *watcher) init() {
@@ -30,7 +29,6 @@ func (w *watcher) init() {
 	go w.loadAndWatch(w.config.envPrefix, w.registerEnvironment)
 
 }
-
 
 // Loads and watch an etcd directory to register objects like domains, environments
 // etc... The register function is passed the etcd Node that has been loaded.
@@ -49,17 +47,15 @@ func (w *watcher) loadPrefix(etcDir string, registerFunc func(*etcd.Node, string
 		for _, serviceNode := range response.Node.Nodes {
 			registerFunc(serviceNode, response.Action)
 
-
 		}
 	}
-
 
 }
 
 func (w *watcher) watch(updateChannel chan *etcd.Response, registerFunc func(*etcd.Node, string)) {
 	for {
 		response := <-updateChannel
-		if(response != nil) {
+		if response != nil {
 			registerFunc(response.Node, response.Action)
 		}
 
@@ -69,8 +65,16 @@ func (w *watcher) watch(updateChannel chan *etcd.Response, registerFunc func(*et
 func (w *watcher) registerDomain(node *etcd.Node, action string) {
 
 	domainName := w.getDomainForNode(node)
+
+	glog.V(5).Infof("%s domain %s", action, domainName)
+
 	domainKey := w.config.domainPrefix + "/" + domainName
 	response, err := w.client.Get(domainKey, true, false)
+
+	if action == "delete" || action == "expire" {
+		w.RemoveDomain(domainName)
+		return
+	}
 
 	if err == nil {
 		domain := &Domain{}
@@ -87,6 +91,35 @@ func (w *watcher) registerDomain(node *etcd.Node, action string) {
 			log.Printf("Registering domain %s with service (%s):%s", domainName, domain.typ, domain.value)
 		}
 	}
+	w.DumpDomains()
+
+}
+
+func (w *watcher) DumpDomains() {
+	glog.V(5).Info("Dumping domains")
+	for k, v := range w.domains {
+		glog.V(5).Infof(" - %s -> (%s) %s", k, v.typ, v.value)
+	}
+}
+
+func (w *watcher) DumpEnvs() {
+	glog.V(5).Info("Dumping environments")
+	for k, v := range w.environments {
+
+		env, err := v.Next()
+		if err != nil {
+			glog.V(5).Infof(" - %s : ", k)
+			glog.V(5).Infof("       UNAVAILABLE")
+		}
+
+		glog.V(5).Infof(" - %s : ", k)
+		glog.V(5).Infof("    location : %s:%d", env.location.Host, env.location.Port)
+		glog.V(5).Infof("    status : %s", env.status.compute())
+	}
+}
+
+func (w *watcher) RemoveDomain(key string) {
+	delete(w.domains, key)
 
 }
 
@@ -105,15 +138,17 @@ func (w *watcher) getEnvIndexForNode(node *etcd.Node) string {
 	return strings.Split(r.FindStringSubmatch(node.Key)[1], "/")[1]
 }
 
-func (w *watcher) Remove(key string) {
-
+func (w *watcher) RemoveEnv(envName string) {
+	delete(w.environments, envName)
 }
 
 func (w *watcher) registerEnvironment(node *etcd.Node, action string) {
 	envName := w.getEnvForNode(node)
-	// Get service's root node instead of changed node.
-	envNode, _ := w.client.Get(w.config.envPrefix + "/" + envName, true, true)
 
+	// Get service's root node instead of changed node.
+	envNode, _ := w.client.Get(w.config.envPrefix+"/"+envName, true, true)
+
+	glog.V(5).Infof("%s env %s", action, envName)
 	for _, indexNode := range envNode.Node.Nodes {
 
 		envIndex := w.getEnvIndexForNode(indexNode)
@@ -124,7 +159,6 @@ func (w *watcher) registerEnvironment(node *etcd.Node, action string) {
 
 		if err == nil {
 
-
 			if w.environments[envName] == nil {
 				w.environments[envName] = &EnvironmentCluster{}
 			}
@@ -132,12 +166,10 @@ func (w *watcher) registerEnvironment(node *etcd.Node, action string) {
 			env := &Environment{}
 			env.key = envIndex
 
-
 			if action == "delete" || action == "expire" {
-				w.Remove(env.key)
+				w.RemoveEnv(envName)
 				return
 			}
-
 
 			for _, node := range response.Node.Nodes {
 				switch node.Key {
@@ -183,5 +215,6 @@ func (w *watcher) registerEnvironment(node *etcd.Node, action string) {
 			}
 			w.environments[envName].Dump("onRegister")
 		}
+		w.DumpEnvs()
 	}
 }
