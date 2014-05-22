@@ -65,6 +65,15 @@ func (env *Environment) Dump() {
 	log.Printf("   location : %s:%d", env.location.Host, env.location.Port)
 }
 
+func (domain *Domain) equals(other *Domain) bool {
+	if domain == nil && other == nil {
+		return true
+	}
+
+	return domain != nil && other != nil &&
+		domain.typ == other.typ && domain.value == other.value
+}
+
 func (env *Environment) equals(other *Environment) bool {
 
 	return env != nil && other != nil &&

@@ -65,7 +65,6 @@ func (w *watcher) registerDomain(node *etcd.Node, action string) {
 
 	domainName := w.getDomainForNode(node)
 
-	glog.V(5).Infof("%s domain %s", action, domainName)
 
 	domainKey := w.config.domainPrefix + "/" + domainName
 	response, err := w.client.Get(domainKey, true, false)
@@ -85,8 +84,13 @@ func (w *watcher) registerDomain(node *etcd.Node, action string) {
 				domain.value = node.Value
 			}
 		}
-		if domain.typ != "" && domain.value != "" {
+
+		actualDomain := w.domains[domainName]
+
+
+		if domain.typ != "" && domain.value != "" && !domain.equals(actualDomain) {
 			w.domains[domainName] = domain
+			glog.Infof("Registered domain %s with (%s) %s", domainName, domain.typ, domain.value)
 
 		}
 	}
