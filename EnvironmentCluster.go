@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"sync"
+	"github.com/golang/glog"
 )
 
 type EnvironmentCluster struct {
@@ -27,12 +28,18 @@ func (cl *EnvironmentCluster) Next() (*Environment, error) {
 		cl.lastIndex = index
 
 		instance = cl.instances[index]
-		if (instance.status == nil || instance.status.compute() == STARTED_STATUS) {
+		glog.V(5).Infof("Checking instance %d status : %s", index, instance.status.compute())
+		if ( instance.status.compute() == STARTED_STATUS) {
 			return instance, nil
 		}
 	}
-	log.Printf("No instance started for %s", instance.domain)
+	glog.V(5).Infof("No instance started for %s", instance.name)
+
 	lastStatus := instance.status
+	glog.V(5).Infof("Last status :")
+	glog.V(5).Infof("   current  : %s", lastStatus.current)
+	glog.V(5).Infof("   expected : %s", lastStatus.expected)
+	glog.V(5).Infof("   alive : %s", lastStatus.alive)
 	return nil, StatusError{instance.status.compute(), lastStatus }
 }
 
