@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -26,6 +25,16 @@ type Domain struct {
 type service struct {
 	Host string `json:"host"`
 	Port int    `json:"port"`
+}
+
+func (s *service) equals(other *service) bool {
+	if s == nil && other == nil {
+		return true
+	}
+
+	return s != nil && other != nil &&
+	s.Host == other.Host &&
+	s.Port == other.Port
 }
 
 type Environment struct {
@@ -57,12 +66,6 @@ func (r *IoEtcdResolver) init() {
 	r.watcher.init()
 }
 
-func (env *Environment) Dump() {
-	log.Printf("Dumping environment %s : ", env.name)
-	log.Printf("   domain : %s", env.domain)
-	log.Printf("   location : %s:%d", env.location.Host, env.location.Port)
-}
-
 func (domain *Domain) equals(other *Domain) bool {
 	if domain == nil && other == nil {
 		return true
@@ -73,10 +76,12 @@ func (domain *Domain) equals(other *Domain) bool {
 }
 
 func (env *Environment) equals(other *Environment) bool {
+	if(env == nil && other == nil) {
+		return true
+	}
 
 	return env != nil && other != nil &&
-		env.location.Host == other.location.Host &&
-		env.location.Port == other.location.Port &&
+		env.location.equals(&other.location) &&
 		env.status.equals(other.status)
 }
 
