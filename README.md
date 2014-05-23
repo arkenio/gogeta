@@ -19,7 +19,7 @@ is to use the IoEtcdResolver. For instance, when running gogeta like this :
 
         gogeta -etcdAddress="http://172.17.42.1:4001" \
                -domainDir="/domains" \
-               -envDir="/services" \
+               -serviceDir="/services" \
                -templateDir="/usr/local/go/src/github.com/nuxeo/gogeta/templates"
 
 Here is the workflow of the request
@@ -73,7 +73,7 @@ Configuration
 Several parameters allow to configure the way the proxy behave :
 
  * `domainDir` allows to select the prefix of the key where it watches for domain
- * `envDir` allows to select the prefix of the key where it watches for environments
+ * `serviceDir` allows to select the prefix of the key where it watches for environments
  * `etcdAddress` specify the address of the `etcd` server
  * `port` port to listen
  * `templateDir` a template directory for eroor status page

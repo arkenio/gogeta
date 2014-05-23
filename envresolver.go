@@ -12,24 +12,24 @@ import (
 type EnvResolver struct {
 	config          *Config
 	watcher         *watcher
-	envs            map[string]*EnvironmentCluster
+	services            map[string]*ServiceCluster
 	dest2ProxyCache map[string]http.Handler
 }
 
 func NewEnvResolver(c *Config) *EnvResolver {
-	envs := make(map[string]*EnvironmentCluster)
-	w := NewEtcdWatcher(c, nil, envs)
-	return &EnvResolver{c, w, envs, make(map[string]http.Handler)}
+	services := make(map[string]*ServiceCluster)
+	w := NewEtcdWatcher(c, nil, services)
+	return &EnvResolver{c, w, services, make(map[string]http.Handler)}
 }
 
 func (r *EnvResolver) resolve(domain string) (http.Handler, error) {
-	envName := strings.Split(domain, ".")[0]
+	serviceName := strings.Split(domain, ".")[0]
 
-	envTree := r.envs[envName]
-	if envTree != nil {
+	serviceTree := r.services[serviceName]
+	if serviceTree != nil {
 
-		if env, err := envTree.Next(); err != nil {
-			uri := fmt.Sprintf("http://%s:%d/", env.location.Host, env.location.Port)
+		if service, err := serviceTree.Next(); err != nil {
+			uri := fmt.Sprintf("http://%s:%d/", service.location.Host, service.location.Port)
 			return r.getOrCreateProxyFor(uri), nil
 		}
 	}
@@ -39,7 +39,7 @@ func (r *EnvResolver) resolve(domain string) (http.Handler, error) {
 }
 
 func (r *EnvResolver) init() {
-	r.watcher.loadAndWatch(r.config.envPrefix, r.watcher.registerEnvironment)
+	r.watcher.loadAndWatch(r.config.servicePrefix, r.watcher.registerService)
 }
 
 func (r *EnvResolver) redirectToStatusPage(domainName string) string {

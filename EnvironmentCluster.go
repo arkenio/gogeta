@@ -6,13 +6,13 @@ import (
 	"github.com/golang/glog"
 )
 
-type EnvironmentCluster struct {
-	instances []*Environment
+type ServiceCluster struct {
+	instances []*Service
 	lastIndex int
 	lock      sync.RWMutex
 }
 
-func (cl *EnvironmentCluster) Next() (*Environment, error) {
+func (cl *ServiceCluster) Next() (*Service, error) {
 	if cl == nil {
 		return nil, StatusError{}
 	}
@@ -21,7 +21,7 @@ func (cl *EnvironmentCluster) Next() (*Environment, error) {
 	if len(cl.instances) == 0 {
 		return nil, errors.New("no alive instance found")
 	}
-	var instance *Environment
+	var instance *Service
 	for tries := 0; tries < len(cl.instances); tries++ {
 		index := (cl.lastIndex + 1) % len(cl.instances)
 		cl.lastIndex = index
@@ -42,7 +42,7 @@ func (cl *EnvironmentCluster) Next() (*Environment, error) {
 	return nil, StatusError{instance.status.compute(), lastStatus }
 }
 
-func (cl *EnvironmentCluster) Remove(key string) {
+func (cl *ServiceCluster) Remove(key string) {
 
 	match := -1
 	for k, v := range cl.instances {
@@ -55,8 +55,8 @@ func (cl *EnvironmentCluster) Remove(key string) {
 	cl.Dump("remove")
 }
 
-// Get an environment by its key (index). Returns nil if not found.
-func (cl *EnvironmentCluster) Get(key string) *Environment {
+// Get an service by its key (index). Returns nil if not found.
+func (cl *ServiceCluster) Get(key string) *Service {
 	for i, v := range cl.instances {
 		if v.key == key {
 			return cl.instances[i]
@@ -65,18 +65,18 @@ func (cl *EnvironmentCluster) Get(key string) *Environment {
 	return nil
 }
 
-func (cl *EnvironmentCluster) Add(env *Environment) {
+func (cl *ServiceCluster) Add(service *Service) {
 	for i, v := range cl.instances {
-		if v.key == env.key {
-			cl.instances[i] = env
+		if v.key == service.key {
+			cl.instances[i] = service
 			return
 		}
 	}
 
-	cl.instances = append(cl.instances, env)
+	cl.instances = append(cl.instances, service)
 }
 
-func (cl *EnvironmentCluster) Dump(action string) {
+func (cl *ServiceCluster) Dump(action string) {
 	for _, v := range cl.instances {
 		glog.Infof("Dump after %s %s -> %s:%d", action, v.key, v.location.Host, v.location.Port)
 	}

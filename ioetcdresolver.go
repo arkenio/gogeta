@@ -37,7 +37,7 @@ func (s *location) equals(other *location) bool {
 	s.Port == other.Port
 }
 
-type Environment struct {
+type Service struct {
 	key      string
 	location *location
 	domain   string
@@ -49,17 +49,17 @@ type IoEtcdResolver struct {
 	config          *Config
 	watcher         *watcher
 	domains         map[string]*Domain
-	environments    map[string]*EnvironmentCluster
+	services    map[string]*ServiceCluster
 	dest2ProxyCache map[string]http.Handler
 	watchIndex      uint64
 }
 
 func NewEtcdResolver(c *Config) *IoEtcdResolver {
 	domains := make(map[string]*Domain)
-	envs := make(map[string]*EnvironmentCluster)
+	services := make(map[string]*ServiceCluster)
 	dest2ProxyCache := make(map[string]http.Handler)
-	w := NewEtcdWatcher(c, domains, envs)
-	return &IoEtcdResolver{c, w, domains, envs, dest2ProxyCache, 0}
+	w := NewEtcdWatcher(c, domains, services)
+	return &IoEtcdResolver{c, w, domains, services, dest2ProxyCache, 0}
 }
 
 func (r *IoEtcdResolver) init() {
@@ -75,14 +75,14 @@ func (domain *Domain) equals(other *Domain) bool {
 		domain.typ == other.typ && domain.value == other.value
 }
 
-func (env *Environment) equals(other *Environment) bool {
-	if(env == nil && other == nil) {
+func (service *Service) equals(other *Service) bool {
+	if(service == nil && other == nil) {
 		return true
 	}
 
-	return env != nil && other != nil &&
-		env.location.equals(other.location) &&
-		env.status.equals(other.status)
+	return service != nil && other != nil &&
+		service.location.equals(other.location) &&
+		service.status.equals(other.status)
 }
 
 func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, error) {
@@ -92,8 +92,8 @@ func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, error) {
 		switch domain.typ {
 
 		case SERVICE_DOMAINTYTPE:
-			if env, err := r.environments[domain.value].Next(); err == nil {
-				addr := net.JoinHostPort(env.location.Host, strconv.Itoa(env.location.Port))
+			if service, err := r.services[domain.value].Next(); err == nil {
+				addr := net.JoinHostPort(service.location.Host, strconv.Itoa(service.location.Port))
 				uri := fmt.Sprintf("http://%s/", addr)
 
 				return r.getOrCreateProxyFor(uri), nil

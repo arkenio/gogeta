@@ -13,23 +13,23 @@ type watcher struct {
 	client       *etcd.Client
 	config       *Config
 	domains      map[string]*Domain
-	environments map[string]*EnvironmentCluster
+	services map[string]*ServiceCluster
 }
 
 // Constructor for a new watcher
-func NewEtcdWatcher(config *Config, domains map[string]*Domain, envs map[string]*EnvironmentCluster) *watcher {
+func NewEtcdWatcher(config *Config, domains map[string]*Domain, services map[string]*ServiceCluster) *watcher {
 	client := etcd.NewClient([]string{config.etcdAddress})
-	return &watcher{client, config, domains, envs}
+	return &watcher{client, config, domains, services}
 }
 
-//Init domains and environments.
+//Init domains and services.
 func (w *watcher) init() {
 	go w.loadAndWatch(w.config.domainPrefix, w.registerDomain)
-	go w.loadAndWatch(w.config.envPrefix, w.registerEnvironment)
+	go w.loadAndWatch(w.config.servicePrefix, w.registerService)
 
 }
 
-// Loads and watch an etcd directory to register objects like domains, environments
+// Loads and watch an etcd directory to register objects like domains, services
 // etc... The register function is passed the etcd Node that has been loaded.
 func (w *watcher) loadAndWatch(etcdDir string, registerFunc func(*etcd.Node, string)) {
 	w.loadPrefix(etcdDir, registerFunc)
@@ -110,84 +110,85 @@ func (w *watcher) getDomainForNode(node *etcd.Node) string {
 }
 
 func (w *watcher) getEnvForNode(node *etcd.Node) string {
-	r := regexp.MustCompile(w.config.envPrefix + "/(.*)(/.*)*")
+	r := regexp.MustCompile(w.config.servicePrefix + "/(.*)(/.*)*")
 	return strings.Split(r.FindStringSubmatch(node.Key)[1], "/")[0]
 }
 
 func (w *watcher) getEnvIndexForNode(node *etcd.Node) string {
-	r := regexp.MustCompile(w.config.envPrefix + "/(.*)(/.*)*")
+	r := regexp.MustCompile(w.config.servicePrefix + "/(.*)(/.*)*")
 	return strings.Split(r.FindStringSubmatch(node.Key)[1], "/")[1]
 }
 
-func (w *watcher) RemoveEnv(envName string) {
-	delete(w.environments, envName)
+func (w *watcher) RemoveEnv(serviceName string) {
+	delete(w.services, serviceName)
 }
 
-func (w *watcher) registerEnvironment(node *etcd.Node, action string) {
-	envName := w.getEnvForNode(node)
+func (w *watcher) registerService(node *etcd.Node, action string) {
+	serviceName := w.getEnvForNode(node)
 
 	// Get service's root node instead of changed node.
-	envNode, _ := w.client.Get(w.config.envPrefix+"/"+envName, true, true)
+	serviceNode, _ := w.client.Get(w.config.servicePrefix+"/"+serviceName, true, true)
 
-	for _, indexNode := range envNode.Node.Nodes {
+	for _, indexNode := range serviceNode.Node.Nodes {
 
-		envIndex := w.getEnvIndexForNode(indexNode)
-		envKey := w.config.envPrefix + "/" + envName + "/" + envIndex
-		statusKey := envKey + "/status"
+		serviceIndex := w.getEnvIndexForNode(indexNode)
+		serviceKey := w.config.servicePrefix + "/" + serviceName + "/" + serviceIndex
+		statusKey := serviceKey + "/status"
 
-		response, err := w.client.Get(envKey, true, true)
+		response, err := w.client.Get(serviceKey, true, true)
 
 		if err == nil {
 
-			if w.environments[envName] == nil {
-				w.environments[envName] = &EnvironmentCluster{}
+			if w.services[serviceName] == nil {
+				w.services[serviceName] = &ServiceCluster{}
 			}
 
-			env := &Environment{}
-			env.key = envIndex
+			service := &Service{}
+			service.location = &location{}
+			service.key = serviceIndex
 
 			if action == "delete" || action == "expire" {
-				w.RemoveEnv(envName)
+				w.RemoveEnv(serviceName)
 				return
 			}
 
 			for _, node := range response.Node.Nodes {
 				switch node.Key {
-				case envKey + "/location":
+				case serviceKey + "/location":
 					location := &location{}
 					err := json.Unmarshal([]byte(node.Value), location)
 					if err != nil {
 						panic(err)
 					}
 
-					env.location.Host = location.Host
-					env.location.Port = location.Port
-				case envKey + "/domain":
-					env.domain = node.Value
+					service.location.Host = location.Host
+					service.location.Port = location.Port
+				case serviceKey + "/domain":
+					service.domain = node.Value
 
 				case statusKey:
-					env.status = &Status{}
+					service.status = &Status{}
 
 					for _, subNode := range node.Nodes {
 						switch subNode.Key {
 						case statusKey + "/alive":
-							env.status.alive = subNode.Value
+							service.status.alive = subNode.Value
 						case statusKey + "/current":
-							env.status.current = subNode.Value
+							service.status.current = subNode.Value
 						case statusKey + "/expected":
-							env.status.expected = subNode.Value
+							service.status.expected = subNode.Value
 						}
 					}
 				}
 			}
 
-			actualEnv := w.environments[envName].Get(env.key)
+			actualEnv := w.services[serviceName].Get(service.key)
 
-			if(!actualEnv.equals(env) && env.location != nil) {
+			if(!actualEnv.equals(service) && service.location != nil) {
 
-				if env.location.Host != "" && env.location.Port != 0 {
-					w.environments[envName].Add(env)
-					glog.Infof("Registering environment %s with location : http://%s:%d/", envName, env.location.Host, env.location.Port)
+				if service.location.Host != "" && service.location.Port != 0 {
+					w.services[serviceName].Add(service)
+					glog.Infof("Registering service %s with location : http://%s:%d/", serviceName, service.location.Host, service.location.Port)
 
 				}
 
