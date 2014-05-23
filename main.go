@@ -1,6 +1,8 @@
 package main
 
-import "log"
+import (
+	"github.com/golang/glog"
+)
 
 const (
 	progname = "gogeta"
@@ -19,7 +21,7 @@ func getResolver(c *Config) domainResolver {
 
 func main() {
 
-	log.Printf("%s starting", progname)
+	glog.Infof("%s starting", progname)
 
 	c := parseConfig()
 

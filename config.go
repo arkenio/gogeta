@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"log"
+	"github.com/golang/glog"
 )
 
 type Config struct {
@@ -24,13 +24,13 @@ func parseConfig() *Config {
 	flag.StringVar(&config.templateDir, "templateDir","/var/www/gogeta", "Template directory")
 	flag.Parse()
 
-	log.Printf("Dumping Configuration")
-	log.Printf("  listening port : %d", config.port)
-	log.Printf("  domainPrefix : %s", config.domainPrefix)
-	log.Printf("  envsPrefix : %s", config.envPrefix)
-	log.Printf("  etcdAddress : %s", config.etcdAddress)
-	log.Printf("  resolverType : %s", config.resolverType)
-	log.Printf("  templateDir: %s", config.templateDir)
+	glog.Infof("Dumping Configuration")
+	glog.Infof("  listening port : %d", config.port)
+	glog.Infof("  domainPrefix : %s", config.domainPrefix)
+	glog.Infof("  envsPrefix : %s", config.envPrefix)
+	glog.Infof("  etcdAddress : %s", config.etcdAddress)
+	glog.Infof("  resolverType : %s", config.resolverType)
+	glog.Infof("  templateDir: %s", config.templateDir)
 
 	return config
 }
