@@ -185,7 +185,7 @@ func getEnvironment(key string, name string, active bool) *Environment {
 
 	return &Environment{
 		key:      key,
-		location: service{"127.0.0.1", 8080},
+		location: &location{"127.0.0.1", 8080},
 		domain:   "dummydomain.com",
 		name:     name,
 		status:   s}

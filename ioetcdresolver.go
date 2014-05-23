@@ -22,12 +22,12 @@ type Domain struct {
 	value  string
 }
 
-type service struct {
+type location struct {
 	Host string `json:"host"`
 	Port int    `json:"port"`
 }
 
-func (s *service) equals(other *service) bool {
+func (s *location) equals(other *location) bool {
 	if s == nil && other == nil {
 		return true
 	}
@@ -39,7 +39,7 @@ func (s *service) equals(other *service) bool {
 
 type Environment struct {
 	key      string
-	location service
+	location *location
 	domain   string
 	name     string
 	status   *Status
@@ -81,7 +81,7 @@ func (env *Environment) equals(other *Environment) bool {
 	}
 
 	return env != nil && other != nil &&
-		env.location.equals(&other.location) &&
+		env.location.equals(other.location) &&
 		env.status.equals(other.status)
 }
 

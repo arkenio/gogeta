@@ -154,7 +154,7 @@ func (w *watcher) registerEnvironment(node *etcd.Node, action string) {
 			for _, node := range response.Node.Nodes {
 				switch node.Key {
 				case envKey + "/location":
-					location := &service{}
+					location := &location{}
 					err := json.Unmarshal([]byte(node.Value), location)
 					if err != nil {
 						panic(err)
