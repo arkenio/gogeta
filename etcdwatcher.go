@@ -183,11 +183,11 @@ func (w *watcher) registerEnvironment(node *etcd.Node, action string) {
 
 			actualEnv := w.environments[envName].Get(env.key)
 
-			if(!actualEnv.equals(env)) {
+			if(!actualEnv.equals(env) && env.location != nil) {
 
 				if env.location.Host != "" && env.location.Port != 0 {
 					w.environments[envName].Add(env)
-					glog.Infof("Registering environment %s with address : http://%s:%d/", envName, env.location.Host, env.location.Port)
+					glog.Infof("Registering environment %s with location : http://%s:%d/", envName, env.location.Host, env.location.Port)
 
 				}
 
