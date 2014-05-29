@@ -1,8 +1,8 @@
 FROM       arken/gom-base
 MAINTAINER Damien Metzler <dmetzler@nuxeo.com>
 
-RUN go get github.com/nuxeo/gogeta
-WORKDIR /usr/local/go/src/github.com/nuxeo/gogeta
+RUN go get github.com/arkenio/gogeta
+WORKDIR /usr/local/go/src/github.com/arkenio/gogeta
 RUN gom install
 RUN gom test
 
