@@ -1,3 +1,4 @@
 gom 'github.com/coreos/go-etcd/etcd'
 gom 'github.com/smartystreets/goconvey'
 gom 'github.com/jacobsa/oglematchers'
+gom 'github.com/golang/glog'
