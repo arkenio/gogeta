@@ -10,16 +10,21 @@ import (
 
 // A watcher loads and watch the etcd hierarchy for domains and services.
 type watcher struct {
-	client       *etcd.Client
-	config       *Config
-	domains      map[string]*Domain
+	client   *etcd.Client
+	config   *Config
+	domains  map[string]*Domain
 	services map[string]*ServiceCluster
 }
 
 // Constructor for a new watcher
-func NewEtcdWatcher(config *Config, domains map[string]*Domain, services map[string]*ServiceCluster) *watcher {
-	client := etcd.NewClient([]string{config.etcdAddress})
-	return &watcher{client, config, domains, services}
+func NewEtcdWatcher(config *Config, domains map[string]*Domain, services map[string]*ServiceCluster) (*watcher, error) {
+	client, err := config.getEtcdClient()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &watcher{client, config, domains, services}, nil
 }
 
 //Init domains and services.
@@ -37,7 +42,6 @@ func (w *watcher) loadAndWatch(etcdDir string, registerFunc func(*etcd.Node, str
 	updateChannel := make(chan *etcd.Response, 10)
 	go w.watch(updateChannel, registerFunc)
 	w.client.Watch(etcdDir, (uint64)(0), true, updateChannel, nil)
-
 }
 
 func (w *watcher) loadPrefix(etcDir string, registerFunc func(*etcd.Node, string)) {
@@ -48,7 +52,6 @@ func (w *watcher) loadPrefix(etcDir string, registerFunc func(*etcd.Node, string
 
 		}
 	}
-
 }
 
 func (w *watcher) watch(updateChannel chan *etcd.Response, registerFunc func(*etcd.Node, string)) {
@@ -64,7 +67,6 @@ func (w *watcher) watch(updateChannel chan *etcd.Response, registerFunc func(*et
 func (w *watcher) registerDomain(node *etcd.Node, action string) {
 
 	domainName := w.getDomainForNode(node)
-
 
 	domainKey := w.config.domainPrefix + "/" + domainName
 	response, err := w.client.Get(domainKey, true, false)
@@ -87,7 +89,6 @@ func (w *watcher) registerDomain(node *etcd.Node, action string) {
 
 		actualDomain := w.domains[domainName]
 
-
 		if domain.typ != "" && domain.value != "" && !domain.equals(actualDomain) {
 			w.domains[domainName] = domain
 			glog.Infof("Registered domain %s with (%s) %s", domainName, domain.typ, domain.value)
@@ -96,8 +97,6 @@ func (w *watcher) registerDomain(node *etcd.Node, action string) {
 	}
 
 }
-
-
 
 func (w *watcher) RemoveDomain(key string) {
 	delete(w.domains, key)
@@ -145,7 +144,8 @@ func (w *watcher) registerService(node *etcd.Node, action string) {
 
 			service := &Service{}
 			service.location = &location{}
-			service.key = serviceIndex
+			service.index = serviceIndex
+			service.nodeKey = serviceKey
 
 			if action == "delete" || action == "expire" {
 				w.RemoveEnv(serviceName)
@@ -182,9 +182,9 @@ func (w *watcher) registerService(node *etcd.Node, action string) {
 				}
 			}
 
-			actualEnv := w.services[serviceName].Get(service.key)
+			actualEnv := w.services[serviceName].Get(service.index)
 
-			if(!actualEnv.equals(service) && service.location != nil) {
+			if !actualEnv.equals(service) && service.location != nil {
 
 				if service.location.Host != "" && service.location.Port != 0 {
 					w.services[serviceName].Add(service)

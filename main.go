@@ -8,14 +8,18 @@ const (
 	progname = "gogeta"
 )
 
-func getResolver(c *Config) domainResolver {
+func getResolver(c *Config) (domainResolver, error) {
 	switch c.resolverType {
 	case "Dummy":
-		return &DummyResolver{}
+		return &DummyResolver{}, nil
 	case "Env":
-		return NewEnvResolver(c)
+		return NewEnvResolver(c), nil
 	default:
-		return NewEtcdResolver(c)
+		r, err := NewEtcdResolver(c)
+		if err != nil {
+			return nil, err
+		}
+		return r, nil
 	}
 }
 
@@ -25,10 +29,15 @@ func main() {
 
 	c := parseConfig()
 
-	resolver := getResolver(c)
-	resolver.init()
+	resolver, error := getResolver(c)
+	if error != nil {
+		panic(error)
+	} else {
 
-	p := NewProxy(c, resolver)
-	p.start()
+		resolver.init()
+
+		p := NewProxy(c, resolver)
+		p.start()
+	}
 
 }

@@ -18,7 +18,7 @@ type EnvResolver struct {
 
 func NewEnvResolver(c *Config) *EnvResolver {
 	services := make(map[string]*ServiceCluster)
-	w := NewEtcdWatcher(c, nil, services)
+	w,_ := NewEtcdWatcher(c, nil, services)
 	return &EnvResolver{c, w, services, make(map[string]http.Handler)}
 }
 

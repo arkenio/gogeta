@@ -41,9 +41,9 @@ func Test_cluster(t *testing.T) {
 
 			Convey("Then returned service should always be the same", func() {
 				service, _ := cluster.Next()
-				firstKey := service.key
+				firstKey := service.index
 				service, _ = cluster.Next()
-				So(service.key, ShouldEqual, firstKey)
+				So(service.index, ShouldEqual, firstKey)
 
 			})
 
@@ -59,12 +59,12 @@ func Test_cluster(t *testing.T) {
 				So(service, ShouldNotBeNil)
 				So(err, ShouldBeNil)
 
-				firstKey := service.key
+				firstKey := service.index
 
 				service, err = cluster.Next()
 				So(service, ShouldNotBeNil)
 				So(err, ShouldBeNil)
-				So(service.key, ShouldNotEqual, firstKey)
+				So(service.index, ShouldNotEqual, firstKey)
 			})
 
 			Convey("Then it should never loadbalance on an inactive service", func() {
@@ -72,18 +72,18 @@ func Test_cluster(t *testing.T) {
 					service, err := cluster.Next()
 					So(service, ShouldNotBeNil)
 					So(err, ShouldBeNil)
-					So(service.key, ShouldNotEqual, "2")
+					So(service.index, ShouldNotEqual, "2")
 				}
 			})
 
 			Convey("Then it can get each service by its key", func() {
 
 				service := cluster.Get("1")
-				So(service.key, ShouldEqual, "1")
+				So(service.index, ShouldEqual, "1")
 				So(service.status.current, ShouldEqual, "started")
 
 				service = cluster.Get("2")
-				So(service.key, ShouldEqual, "2")
+				So(service.index, ShouldEqual, "2")
 				So(service.status.current, ShouldEqual, "stopped")
 			})
 
@@ -174,7 +174,7 @@ func Test_Service(t *testing.T) {
 	})
 }
 
-func getService(key string, name string, active bool) *Service {
+func getService(index string, name string, active bool) *Service {
 	var s *Status
 
 	if active {
@@ -184,7 +184,7 @@ func getService(key string, name string, active bool) *Service {
 	}
 
 	return &Service{
-		key:      key,
+		index:      index,
 		location: &location{"127.0.0.1", 8080},
 		domain:   "dummydomain.com",
 		name:     name,

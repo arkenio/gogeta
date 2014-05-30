@@ -1,17 +1,31 @@
 package main
 
 import (
+	"errors"
 	"flag"
+	"github.com/coreos/go-etcd/etcd"
 	"github.com/golang/glog"
 )
 
 type Config struct {
-	port         int
-	domainPrefix string
-	servicePrefix    string
-	etcdAddress  string
-	resolverType string
-	templateDir  string
+	port          int
+	domainPrefix  string
+	servicePrefix string
+	etcdAddress   string
+	resolverType  string
+	templateDir   string
+	lastAccessInterval int
+	client        *etcd.Client
+}
+
+func (c *Config) getEtcdClient() (*etcd.Client, error) {
+	if c.client == nil {
+		c.client = etcd.NewClient([]string{c.etcdAddress})
+		if !c.client.SyncCluster() {
+			return nil, errors.New("Unable to sync with etcd cluster, check your configuration or etcd status")
+		}
+	}
+	return c.client, nil
 }
 
 func parseConfig() *Config {
@@ -21,7 +35,8 @@ func parseConfig() *Config {
 	flag.StringVar(&config.servicePrefix, "serviceDir", "/services", "etcd prefix to get services")
 	flag.StringVar(&config.etcdAddress, "etcdAddress", "http://127.0.0.1:4001/", "etcd client host")
 	flag.StringVar(&config.resolverType, "resolverType", "IoEtcd", "type of resolver (IoEtcd|Env|Dummy)")
-	flag.StringVar(&config.templateDir, "templateDir","./templates", "Template directory")
+	flag.StringVar(&config.templateDir, "templateDir", "./templates", "Template directory")
+	flag.IntVar(&config.lastAccessInterval,"lastAccessInterval",10,"Interval (in seconds to refresh last access time of a service")
 	flag.Parse()
 
 	glog.Infof("Dumping Configuration")
@@ -31,6 +46,7 @@ func parseConfig() *Config {
 	glog.Infof("  etcdAddress : %s", config.etcdAddress)
 	glog.Infof("  resolverType : %s", config.resolverType)
 	glog.Infof("  templateDir: %s", config.templateDir)
+	glog.Infof("  lastAccessInterval: %d", config.lastAccessInterval)
 
 	return config
 }

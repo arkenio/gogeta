@@ -42,11 +42,11 @@ func (cl *ServiceCluster) Next() (*Service, error) {
 	return nil, StatusError{instance.status.compute(), lastStatus }
 }
 
-func (cl *ServiceCluster) Remove(key string) {
+func (cl *ServiceCluster) Remove(instanceIndex string) {
 
 	match := -1
 	for k, v := range cl.instances {
-		if v.key == key {
+		if v.index == instanceIndex {
 			match = k
 		}
 	}
@@ -56,9 +56,9 @@ func (cl *ServiceCluster) Remove(key string) {
 }
 
 // Get an service by its key (index). Returns nil if not found.
-func (cl *ServiceCluster) Get(key string) *Service {
+func (cl *ServiceCluster) Get(instanceIndex string) *Service {
 	for i, v := range cl.instances {
-		if v.key == key {
+		if v.index == instanceIndex {
 			return cl.instances[i]
 		}
 	}
@@ -66,9 +66,9 @@ func (cl *ServiceCluster) Get(key string) *Service {
 }
 
 func (cl *ServiceCluster) Add(service *Service) {
-	for i, v := range cl.instances {
-		if v.key == service.key {
-			cl.instances[i] = service
+	for index, v := range cl.instances {
+		if v.index == service.index {
+			cl.instances[index] = service
 			return
 		}
 	}
@@ -78,6 +78,6 @@ func (cl *ServiceCluster) Add(service *Service) {
 
 func (cl *ServiceCluster) Dump(action string) {
 	for _, v := range cl.instances {
-		glog.Infof("Dump after %s %s -> %s:%d", action, v.key, v.location.Host, v.location.Port)
+		glog.Infof("Dump after %s %s -> %s:%d", action, v.index, v.location.Host, v.location.Port)
 	}
 }

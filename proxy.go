@@ -54,7 +54,8 @@ func (p *proxy) start() {
 	glog.Infof("Listening on port %d", p.config.port)
 	http.Handle("/__static__/", http.FileServer(http.Dir(p.config.templateDir)))
 	http.Handle("/", proxyHandler(p.proxy))
-	http.ListenAndServe(fmt.Sprintf(":%d", p.config.port), nil)
+	glog.Fatalf("%s",http.ListenAndServe(fmt.Sprintf(":%d", p.config.port), nil))
+
 }
 
 
