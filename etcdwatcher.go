@@ -158,8 +158,8 @@ func (w *watcher) registerService(node *etcd.Node, action string) {
 					location := &location{}
 					err := json.Unmarshal([]byte(node.Value), location)
 					if err != nil {
-						glog.Error("Registering service %s has failed - Location is wrong or missing information", serviceName)
-						panic(err)
+						glog.Errorf("Registering service %s has failed - Location is wrong or missing information", serviceName)
+						break
 					}
 
 					service.location.Host = location.Host
