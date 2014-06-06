@@ -13,6 +13,7 @@ const (
 	STOPPED_STATUS       = "stopped"
 	ERROR_STATUS         = "error"
 	NA_STATUS            = "n/a"
+	PASSIVATED_STATUS    = "passivated"
 )
 
 type Status struct {
@@ -64,6 +65,8 @@ func (s *Status) compute() string {
 			} else {
 				return ERROR_STATUS
 			}
+		case PASSIVATED_STATUS:
+			return PASSIVATED_STATUS
 			// N/A
 		default:
 			return ERROR_STATUS
@@ -98,7 +101,9 @@ func (sp *StatusPage) serve(w http.ResponseWriter, r *http.Request) {
 	switch sp.error.computedStatus {
 	case "notfound":
 		code = http.StatusNotFound
-	case "starting":
+	case STARTING_STATUS:
+		code = http.StatusServiceUnavailable
+	case PASSIVATED_STATUS:
 		code = http.StatusServiceUnavailable
 	default:
 		code = http.StatusInternalServerError
