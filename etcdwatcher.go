@@ -146,6 +146,7 @@ func (w *watcher) registerService(node *etcd.Node, action string) {
 			service.location = &location{}
 			service.index = serviceIndex
 			service.nodeKey = serviceKey
+			service.name = serviceName
 
 			if action == "delete" || action == "expire" {
 				w.RemoveEnv(serviceName)
@@ -169,7 +170,7 @@ func (w *watcher) registerService(node *etcd.Node, action string) {
 
 				case statusKey:
 					service.status = &Status{}
-
+					service.status.service = service
 					for _, subNode := range node.Nodes {
 						switch subNode.Key {
 						case statusKey + "/alive":
