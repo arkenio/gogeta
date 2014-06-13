@@ -41,6 +41,15 @@ func (ph proxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (ph proxyHandler) OnError(w http.ResponseWriter, r *http.Request, error error, c *Config) {
 	if stError, ok := error.(StatusError); ok {
 		sp := &StatusPage{c,stError}
+		// Check if status is passivated -> setting expected state = started
+		if sp.error.computedStatus == PASSIVATED_STATUS{
+			client, _ := c.getEtcdClient()
+			_, error := client.Set(c.servicePrefix+"/"+sp.error.status.service.name+"/"+sp.error.status.service.index+"/status/expected", STARTED_STATUS, 0)
+			if (error != nil) {
+				glog.Errorf("Fail: setting expected state = 'started' for instance %s. Error:%s", sp.error.status.service.name, error)
+			}
+			glog.Infof("Instance %s is ready for re-activation", sp.error.status.service.name)
+		}
 		sp.serve(w,r)
 	} else {
 		sp := &StatusPage{c,StatusError{"notfound", nil}}

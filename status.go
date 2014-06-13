@@ -20,6 +20,7 @@ type Status struct {
 	alive    string
 	current  string
 	expected string
+	service *Service
 }
 
 func (s *Status) equals(other *Status) bool {
@@ -39,7 +40,9 @@ func (s *Status) compute() string {
 		current := s.current
 		switch current {
 		case STOPPED_STATUS:
-			if expected == STOPPED_STATUS {
+			if expected == PASSIVATED_STATUS {
+				return PASSIVATED_STATUS
+			}else if expected == STOPPED_STATUS {
 				return STOPPED_STATUS
 			} else {
 				return ERROR_STATUS
@@ -65,8 +68,6 @@ func (s *Status) compute() string {
 			} else {
 				return ERROR_STATUS
 			}
-		case PASSIVATED_STATUS:
-			return PASSIVATED_STATUS
 			// N/A
 		default:
 			return ERROR_STATUS
@@ -101,9 +102,7 @@ func (sp *StatusPage) serve(w http.ResponseWriter, r *http.Request) {
 	switch sp.error.computedStatus {
 	case "notfound":
 		code = http.StatusNotFound
-	case STARTING_STATUS:
-		code = http.StatusServiceUnavailable
-	case PASSIVATED_STATUS:
+	case STARTING_STATUS, PASSIVATED_STATUS:
 		code = http.StatusServiceUnavailable
 	default:
 		code = http.StatusInternalServerError
