@@ -178,9 +178,9 @@ func getService(index string, name string, active bool) *Service {
 	var s *Status
 
 	if active {
-		s = &Status{"1", "started", "started"}
+		s = &Status{"1", "started", "started", &Service{}}
 	} else {
-		s = &Status{"", "stopped", "started"}
+		s = &Status{"", "stopped", "started", &Service{}}
 	}
 
 	return &Service{
