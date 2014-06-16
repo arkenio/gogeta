@@ -84,7 +84,7 @@ func hostnameOf(host string) string {
 
 func reactivate(sp *StatusPage, c *Config) {
 	// Check if status is passivated -> setting expected state = started
-	if sp.error.computedStatus == "notfound" {
+	if sp.error.computedStatus == PASSIVATED_STATUS {
 		client, _ := c.getEtcdClient()
 		_, error := client.Set(c.servicePrefix+"/"+sp.error.status.service.name+"/"+sp.error.status.service.index+"/status/expected", STARTED_STATUS, 0)
 		if (error != nil) {
