@@ -21,31 +21,33 @@ func NewProxy(c *Config, resolver domainResolver) *proxy {
 	return &proxy{c, resolver}
 }
 
-
 type proxyHandler func(http.ResponseWriter, *http.Request) (*Config, error)
 
 func (ph proxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	defer func() {
-		if r:=recover();r!=nil {
-			http.Error(w,"An error occured serving request",500)
+		if r := recover(); r != nil {
+			http.Error(w, "An error occured serving request", 500)
 			glog.Errorf("Recovered from error : %s", r)
 		}
 	}()
 
-	if c,err := ph(w, r); err != nil {
-		ph.OnError(w,r,err,c)
+	if c, err := ph(w, r); err != nil {
+		ph.OnError(w, r, err, c)
 	}
 }
 
 func (ph proxyHandler) OnError(w http.ResponseWriter, r *http.Request, error error, c *Config) {
 	if stError, ok := error.(StatusError); ok {
-		sp := &StatusPage{c,stError}
-		reactivate(sp, c)
-		sp.serve(w,r)
+		sp := &StatusPage{c, stError}
+		// Check if status is passivated -> setting expected state = started
+		if sp.error.computedStatus == PASSIVATED_STATUS {
+			reactivate(sp, c)
+		}
+		sp.serve(w, r)
 	} else {
-		sp := &StatusPage{c,StatusError{"notfound", nil}}
-		sp.serve(w,r)
+		sp := &StatusPage{c, StatusError{"notfound", nil}}
+		sp.serve(w, r)
 	}
 }
 
@@ -55,7 +57,7 @@ func (p *proxy) start() {
 	glog.Infof("Listening on port %d", p.config.port)
 	http.Handle("/__static__/", http.FileServer(http.Dir(p.config.templateDir)))
 	http.Handle("/", proxyHandler(p.proxy))
-	glog.Fatalf("%s",http.ListenAndServe(fmt.Sprintf(":%d", p.config.port), nil))
+	glog.Fatalf("%s", http.ListenAndServe(fmt.Sprintf(":%d", p.config.port), nil))
 
 }
 
@@ -70,8 +72,6 @@ func (p *proxy) proxy(w http.ResponseWriter, r *http.Request) (*Config, error) {
 	}
 }
 
-
-
 func hostnameOf(host string) string {
 	hostname := strings.Split(host, ":")[0]
 
@@ -83,13 +83,10 @@ func hostnameOf(host string) string {
 }
 
 func reactivate(sp *StatusPage, c *Config) {
-	// Check if status is passivated -> setting expected state = started
-	if sp.error.computedStatus == PASSIVATED_STATUS {
-		client, _ := c.getEtcdClient()
-		_, error := client.Set(c.servicePrefix+"/"+sp.error.status.service.name+"/"+sp.error.status.service.index+"/status/expected", STARTED_STATUS, 0)
-		if (error != nil) {
-			glog.Errorf("Fail: setting expected state = 'started' for instance %s. Error:%s", sp.error.status.service.name, error)
-		}
-		glog.Infof("Instance %s is ready for re-activation", sp.error.status.service.name)
+	client, _ := c.getEtcdClient()
+	_, error := client.Set(c.servicePrefix+"/"+sp.error.status.service.name+"/"+sp.error.status.service.index+"/status/expected", STARTED_STATUS, 0)
+	if (error != nil) {
+		glog.Errorf("Fail: setting expected state = 'started' for instance %s. Error:%s", sp.error.status.service.name, error)
 	}
+	glog.Infof("Instance %s is ready for re-activation", sp.error.status.service.name)
 }
