@@ -149,6 +149,7 @@ func (w *watcher) registerService(node *etcd.Node, action string) {
 			service.name = serviceName
 
 			if action == "delete" || action == "expire" {
+				glog.Infof("Removing service %s (action:%s)", serviceName, action)
 				w.RemoveEnv(serviceName)
 				return
 			}

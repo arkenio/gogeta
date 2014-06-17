@@ -14,7 +14,6 @@ type ServiceCluster struct {
 
 func (cl *ServiceCluster) Next() (*Service, error) {
 	if cl == nil {
-		glog.Error("Service cluster map is nil")
 		return nil, StatusError{}
 	}
 	cl.lock.RLock()

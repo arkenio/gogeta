@@ -97,7 +97,12 @@ func (service *Service) equals(other *Service) bool {
 func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, error) {
 	glog.V(5).Infof("Looking for domain : %s ", domainName)
 	domain := r.domains[domainName]
+	glog.Infof("Services:%s",r.services)
 	if domain != nil {
+		service := r.services[domain.value]
+		if service == nil {
+			glog.Errorf("The services map doesn't contain service with the domain value: %s", domain.value)
+		}
 		switch domain.typ {
 
 		case SERVICE_DOMAINTYTPE:
