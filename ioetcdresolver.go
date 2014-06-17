@@ -97,7 +97,7 @@ func (service *Service) equals(other *Service) bool {
 func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, error) {
 	glog.V(5).Infof("Looking for domain : %s ", domainName)
 	domain := r.domains[domainName]
-	glog.Infof("Services:%s",r.services)
+	glog.V(5).Infof("Services:%s",r.services)
 	if domain != nil {
 		service := r.services[domain.value]
 		if service == nil {
