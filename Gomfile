@@ -1,4 +1,4 @@
-gom 'github.com/coreos/go-etcd/etcd'
-gom 'github.com/smartystreets/goconvey'
-gom 'github.com/jacobsa/oglematchers'
-gom 'github.com/golang/glog'
+gom 'github.com/coreos/go-etcd/etcd', :tag => 'v0.4.4'
+gom 'github.com/smartystreets/goconvey', :commit => '010bae7420a218c99d00a4ad6045625966f504b9'
+gom 'github.com/jacobsa/oglematchers',  :commit => '4fc24f97b5b74022c2a3f4ca7eed57ca29083d3e'
+gom 'github.com/golang/glog', :commit => 'd1c4472bf2efd3826f2b5bdcc02d8416798d678c'
