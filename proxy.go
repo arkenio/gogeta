@@ -68,8 +68,8 @@ func (p *proxy) proxy(w http.ResponseWriter, r *http.Request) (*Config, error) {
 		url := r.URL
 
 		url.Scheme = "https"
-		url.Host = r.Host
-
+		//Don't include port
+		url.Host = hostnameOf(r.Host)
 
 		http.Redirect(w, r, fmt.Sprint(url), http.StatusMovedPermanently)
 		return p.config, nil
