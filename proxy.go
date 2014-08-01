@@ -65,7 +65,7 @@ func (p *proxy) start() {
 func (p *proxy) proxy(w http.ResponseWriter, r *http.Request) (*Config, error) {
 
 	if p.config.forceFwSsl &&  "https" != r.Header.Get("x-forwarded-proto") {
-		
+
 		http.Redirect(w, r, fmt.Sprintf("https://%s%s", hostnameOf(r.Host), r.URL.String() ), http.StatusMovedPermanently)
 		return p.config, nil
 	}

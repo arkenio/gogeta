@@ -17,6 +17,7 @@ type Config struct {
 	lastAccessInterval int
 	client        *etcd.Client
 	forceFwSsl	  bool
+	UrlHeaderParam string
 }
 
 func (c *Config) getEtcdClient() (*etcd.Client, error) {
@@ -37,6 +38,7 @@ func parseConfig() *Config {
 	flag.StringVar(&config.etcdAddress, "etcdAddress", "http://127.0.0.1:4001/", "etcd client host")
 	flag.StringVar(&config.resolverType, "resolverType", "IoEtcd", "type of resolver (IoEtcd|Env|Dummy)")
 	flag.StringVar(&config.templateDir, "templateDir", "./templates", "Template directory")
+	flag.StringVar(&config.UrlHeaderParam, "UrlHeaderParam", "", "Name of the param to inject the originating url")
 	flag.IntVar(&config.lastAccessInterval,"lastAccessInterval",10,"Interval (in seconds to refresh last access time of a service")
 	flag.BoolVar(&config.forceFwSsl, "forceFwSsl", false, "If not x-forwarded-proto set to https, then redirecto to the equivalent https url")
 	flag.Parse()
@@ -50,6 +52,7 @@ func parseConfig() *Config {
 	glog.Infof("  templateDir: %s", config.templateDir)
 	glog.Infof("  lastAccessInterval: %d", config.lastAccessInterval)
 	glog.Infof("  forceFwSsl: %t", config.forceFwSsl)
+	glog.Infof("  UrlHeaderParam: %s", config.UrlHeaderParam)
 
 	return config
 }
