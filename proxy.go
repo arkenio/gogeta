@@ -63,6 +63,19 @@ func (p *proxy) start() {
 
 
 func (p *proxy) proxy(w http.ResponseWriter, r *http.Request) (*Config, error) {
+
+	if p.config.forceFwSsl &&  "https" != r.Header.Get("x-forwarded-proto") {
+		url := r.URL
+
+		url.Scheme = "https"
+		url.Host = r.Host
+
+
+		http.Redirect(w, r, fmt.Sprint(url), http.StatusMovedPermanently)
+		return p.config, nil
+	}
+
+
 	host := hostnameOf(r.Host)
 	if server, err := p.domainResolver.resolve(host); err != nil {
 		return p.config, err
