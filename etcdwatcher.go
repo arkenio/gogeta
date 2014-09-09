@@ -126,52 +126,54 @@ func (w *watcher) registerService(node *etcd.Node, action string) {
 	serviceName := w.getEnvForNode(node)
 
 	// Get service's root node instead of changed node.
-	serviceNode, _ := w.client.Get(w.config.servicePrefix+"/"+serviceName, true, true)
+	serviceNode, err := w.client.Get(w.config.servicePrefix+"/"+serviceName, true, true)
 
-	for _, indexNode := range serviceNode.Node.Nodes {
+	if(err == nil) {
 
-		serviceIndex := w.getEnvIndexForNode(indexNode)
-		serviceKey := w.config.servicePrefix + "/" + serviceName + "/" + serviceIndex
-		statusKey := serviceKey + "/status"
+		for _, indexNode := range serviceNode.Node.Nodes {
 
-		response, err := w.client.Get(serviceKey, true, true)
+			serviceIndex := w.getEnvIndexForNode(indexNode)
+			serviceKey := w.config.servicePrefix + "/" + serviceName + "/" + serviceIndex
+			statusKey := serviceKey + "/status"
 
-		if err == nil {
+			response, err := w.client.Get(serviceKey, true, true)
 
-			if w.services[serviceName] == nil {
-				w.services[serviceName] = &ServiceCluster{}
-			}
+			if err == nil {
 
-			service := &Service{}
-			service.location = &location{}
-			service.index = serviceIndex
-			service.nodeKey = serviceKey
-			service.name = serviceName
+				if w.services[serviceName] == nil {
+					w.services[serviceName] = &ServiceCluster{}
+				}
 
-			if action == "delete" {
-				glog.Infof("Removing service %s", serviceName)
-				w.RemoveEnv(serviceName)
-				return
-			}
+				service := &Service{}
+				service.location = &location{}
+				service.index = serviceIndex
+				service.nodeKey = serviceKey
+				service.name = serviceName
 
-			for _, node := range response.Node.Nodes {
-				switch node.Key {
-				case serviceKey + "/location":
-					location := &location{}
-					err := json.Unmarshal([]byte(node.Value), location)
-					if err != nil {
-						glog.Errorf("Registering service %s has failed - Location is wrong or missing information", serviceName)
-						break
-					}
+				if action == "delete" {
+					glog.Infof("Removing service %s", serviceName)
+					w.RemoveEnv(serviceName)
+					return
+				}
 
-					service.location.Host = location.Host
-					service.location.Port = location.Port
-				case serviceKey + "/domain":
-					service.domain = node.Value
+				for _, node := range response.Node.Nodes {
+					switch node.Key {
+					case serviceKey + "/location":
+						location := &location{}
+						err := json.Unmarshal([]byte(node.Value), location)
+						if err != nil {
+							glog.Errorf("Registering service %s has failed - Location is wrong or missing information", serviceName)
+							break
+						}
 
-				case statusKey:
-					service.status = &Status{}
-					service.status.service = service
+						service.location.Host = location.Host
+						service.location.Port = location.Port
+					case serviceKey + "/domain":
+						service.domain = node.Value
+
+					case statusKey:
+						service.status = &Status{}
+						service.status.service = service
 					for _, subNode := range node.Nodes {
 						switch subNode.Key {
 						case statusKey + "/alive":
@@ -182,20 +184,23 @@ func (w *watcher) registerService(node *etcd.Node, action string) {
 							service.status.expected = subNode.Value
 						}
 					}
-				}
-			}
-
-			actualEnv := w.services[serviceName].Get(service.index)
-
-			if !actualEnv.equals(service) && service.location != nil {
-
-				if service.location.Host != "" && service.location.Port != 0 {
-					w.services[serviceName].Add(service)
-					glog.Infof("Registering service %s with location : http://%s:%d/", serviceName, service.location.Host, service.location.Port)
-
+					}
 				}
 
+				actualEnv := w.services[serviceName].Get(service.index)
+
+				if !actualEnv.equals(service) && service.location != nil {
+
+					if service.location.Host != "" && service.location.Port != 0 {
+						w.services[serviceName].Add(service)
+						glog.Infof("Registering service %s with location : http://%s:%d/", serviceName, service.location.Host, service.location.Port)
+
+					}
+
+				}
 			}
 		}
+	} else {
+		glog.Errorf("Unable to get information for service %s from etcd",serviceName)
 	}
 }
