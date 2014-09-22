@@ -3,7 +3,7 @@ MAINTAINER Damien Metzler <dmetzler@nuxeo.com>
 
 RUN go get github.com/arkenio/gogeta
 WORKDIR /usr/local/go/src/github.com/arkenio/gogeta
-RUN git checkout master
+RUN git checkout v0.3.0
 RUN gom install
 RUN gom test
 
