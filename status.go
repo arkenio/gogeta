@@ -5,31 +5,30 @@ import (
 	"net/http"
 )
 
-
 const (
-	STARTING_STATUS      = "starting"
-	STARTED_STATUS       = "started"
-	STOPPING_STATUS      = "stopping"
-	STOPPED_STATUS       = "stopped"
-	ERROR_STATUS         = "error"
-	NA_STATUS            = "n/a"
-	PASSIVATED_STATUS    = "passivated"
+	STARTING_STATUS   = "starting"
+	STARTED_STATUS    = "started"
+	STOPPING_STATUS   = "stopping"
+	STOPPED_STATUS    = "stopped"
+	ERROR_STATUS      = "error"
+	NA_STATUS         = "n/a"
+	PASSIVATED_STATUS = "passivated"
 )
 
 type Status struct {
 	alive    string
 	current  string
 	expected string
-	service *Service
+	service  *Service
 }
 
 func (s *Status) equals(other *Status) bool {
-	if(s == nil && other == nil) {
+	if s == nil && other == nil {
 		return true
 	}
-	return s!= nil && other != nil && s.alive == other.alive &&
-	s.current == other.current &&
-	s.expected == other.expected
+	return s != nil && other != nil && s.alive == other.alive &&
+		s.current == other.current &&
+		s.expected == other.expected
 }
 
 func (s *Status) compute() string {
@@ -42,7 +41,7 @@ func (s *Status) compute() string {
 		case STOPPED_STATUS:
 			if expected == PASSIVATED_STATUS {
 				return PASSIVATED_STATUS
-			}else if expected == STOPPED_STATUS {
+			} else if expected == STOPPED_STATUS {
 				return STOPPED_STATUS
 			} else {
 				return ERROR_STATUS
@@ -73,10 +72,8 @@ func (s *Status) compute() string {
 			return ERROR_STATUS
 		}
 	}
-
 	return STARTED_STATUS
 }
-
 
 type StatusError struct {
 	computedStatus string
@@ -112,11 +109,10 @@ func (sp *StatusPage) serve(w http.ResponseWriter, r *http.Request) {
 	templateDir := sp.config.templateDir
 	tmpl, err := template.ParseFiles(templateDir+"/main.tpl", templateDir+"/body_"+sp.error.computedStatus+".tpl")
 	if err != nil {
-		http.Error(w, "Unable to serve page : " + sp.error.computedStatus, code)
+		http.Error(w, "Unable to serve page : "+sp.error.computedStatus, code)
 
 		return
 	}
-
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(code)

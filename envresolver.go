@@ -12,13 +12,13 @@ import (
 type EnvResolver struct {
 	config          *Config
 	watcher         *watcher
-	services            map[string]*ServiceCluster
+	services        map[string]*ServiceCluster
 	dest2ProxyCache map[string]http.Handler
 }
 
 func NewEnvResolver(c *Config) *EnvResolver {
 	services := make(map[string]*ServiceCluster)
-	w,_ := NewEtcdWatcher(c, nil, services)
+	w, _ := NewEtcdWatcher(c, nil, services)
 	return &EnvResolver{c, w, services, make(map[string]http.Handler)}
 }
 

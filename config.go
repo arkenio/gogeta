@@ -8,16 +8,16 @@ import (
 )
 
 type Config struct {
-	port          int
-	domainPrefix  string
-	servicePrefix string
-	etcdAddress   string
-	resolverType  string
-	templateDir   string
+	port               int
+	domainPrefix       string
+	servicePrefix      string
+	etcdAddress        string
+	resolverType       string
+	templateDir        string
 	lastAccessInterval int
-	client        *etcd.Client
-	forceFwSsl	  bool
-	UrlHeaderParam string
+	client             *etcd.Client
+	forceFwSsl         bool
+	UrlHeaderParam     string
 }
 
 func (c *Config) getEtcdClient() (*etcd.Client, error) {
@@ -39,7 +39,7 @@ func parseConfig() *Config {
 	flag.StringVar(&config.resolverType, "resolverType", "IoEtcd", "type of resolver (IoEtcd|Env|Dummy)")
 	flag.StringVar(&config.templateDir, "templateDir", "./templates", "Template directory")
 	flag.StringVar(&config.UrlHeaderParam, "UrlHeaderParam", "", "Name of the param to inject the originating url")
-	flag.IntVar(&config.lastAccessInterval,"lastAccessInterval",10,"Interval (in seconds to refresh last access time of a service")
+	flag.IntVar(&config.lastAccessInterval, "lastAccessInterval", 10, "Interval (in seconds to refresh last access time of a service")
 	flag.BoolVar(&config.forceFwSsl, "forceFwSsl", false, "If not x-forwarded-proto set to https, then redirecto to the equivalent https url")
 	flag.Parse()
 

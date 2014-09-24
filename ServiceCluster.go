@@ -2,8 +2,8 @@ package main
 
 import (
 	"errors"
-	"sync"
 	"github.com/golang/glog"
+	"sync"
 )
 
 type ServiceCluster struct {
@@ -28,18 +28,26 @@ func (cl *ServiceCluster) Next() (*Service, error) {
 
 		instance = cl.instances[index]
 		glog.V(5).Infof("Checking instance %d status : %s", index, instance.status.compute())
-		if ( instance.status.compute() == STARTED_STATUS) {
+		if instance.status.compute() == STARTED_STATUS && instance.location.isFullyDefined() {
 			return instance, nil
 		}
+
 	}
-	glog.V(5).Infof("No instance started for %s", instance.name)
+
 
 	lastStatus := instance.status
+
+	if lastStatus == nil && !instance.location.isFullyDefined() {
+		glog.Infof("No status and no location for %s", instance.name)
+		return nil, StatusError{ERROR_STATUS, lastStatus}
+	}
+
+	glog.V(5).Infof("No instance started for %s", instance.name)
 	glog.V(5).Infof("Last status :")
 	glog.V(5).Infof("   current  : %s", lastStatus.current)
 	glog.V(5).Infof("   expected : %s", lastStatus.expected)
 	glog.V(5).Infof("   alive : %s", lastStatus.alive)
-	return nil, StatusError{instance.status.compute(), lastStatus }
+	return nil, StatusError{instance.status.compute(), lastStatus}
 }
 
 func (cl *ServiceCluster) Remove(instanceIndex string) {

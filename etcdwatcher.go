@@ -128,7 +128,7 @@ func (w *watcher) registerService(node *etcd.Node, action string) {
 	// Get service's root node instead of changed node.
 	serviceNode, err := w.client.Get(w.config.servicePrefix+"/"+serviceName, true, true)
 
-	if(err == nil) {
+	if err == nil {
 
 		for _, indexNode := range serviceNode.Node.Nodes {
 
@@ -161,46 +161,44 @@ func (w *watcher) registerService(node *etcd.Node, action string) {
 					case serviceKey + "/location":
 						location := &location{}
 						err := json.Unmarshal([]byte(node.Value), location)
-						if err != nil {
-							glog.Errorf("Registering service %s has failed - Location is wrong or missing information", serviceName)
-							break
+						if err == nil {
+							service.location.Host = location.Host
+							service.location.Port = location.Port
 						}
 
-						service.location.Host = location.Host
-						service.location.Port = location.Port
 					case serviceKey + "/domain":
 						service.domain = node.Value
 
 					case statusKey:
 						service.status = &Status{}
 						service.status.service = service
-					for _, subNode := range node.Nodes {
-						switch subNode.Key {
-						case statusKey + "/alive":
-							service.status.alive = subNode.Value
-						case statusKey + "/current":
-							service.status.current = subNode.Value
-						case statusKey + "/expected":
-							service.status.expected = subNode.Value
+						for _, subNode := range node.Nodes {
+							switch subNode.Key {
+							case statusKey + "/alive":
+								service.status.alive = subNode.Value
+							case statusKey + "/current":
+								service.status.current = subNode.Value
+							case statusKey + "/expected":
+								service.status.expected = subNode.Value
+							}
 						}
-					}
 					}
 				}
 
 				actualEnv := w.services[serviceName].Get(service.index)
 
-				if !actualEnv.equals(service) && service.location != nil {
-
+				if !actualEnv.equals(service) {
+					w.services[serviceName].Add(service)
 					if service.location.Host != "" && service.location.Port != 0 {
-						w.services[serviceName].Add(service)
 						glog.Infof("Registering service %s with location : http://%s:%d/", serviceName, service.location.Host, service.location.Port)
-
+					} else {
+						glog.Infof("Registering service %s without location", serviceName)
 					}
 
 				}
 			}
 		}
 	} else {
-		glog.Errorf("Unable to get information for service %s from etcd",serviceName)
+		glog.Errorf("Unable to get information for service %s from etcd", serviceName)
 	}
 }

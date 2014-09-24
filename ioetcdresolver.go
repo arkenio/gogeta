@@ -39,6 +39,10 @@ func (s *location) equals(other *location) bool {
 		s.Port == other.Port
 }
 
+func (s *location) isFullyDefined() bool {
+	return s.Host != "" && s.Port != 0
+}
+
 type Service struct {
 	index      string
 	nodeKey    string
@@ -106,8 +110,8 @@ func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, error) {
 		switch domain.typ {
 
 		case SERVICE_DOMAINTYTPE:
-			if service, err := r.services[domain.value].Next(); err == nil {
-
+			service, err := r.services[domain.value].Next()
+			if err == nil && service.location.isFullyDefined() {
 				addr := net.JoinHostPort(service.location.Host, strconv.Itoa(service.location.Port))
 				uri := fmt.Sprintf("http://%s/", addr)
 				r.setLastAccessTime(service)

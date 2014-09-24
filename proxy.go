@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/golang/glog"
 	"net/http"
 	"strings"
-	"github.com/golang/glog"
 )
 
 type domainResolver interface {
@@ -51,8 +51,6 @@ func (ph proxyHandler) OnError(w http.ResponseWriter, r *http.Request, error err
 	}
 }
 
-
-
 func (p *proxy) start() {
 	glog.Infof("Listening on port %d", p.config.port)
 	http.Handle("/__static__/", http.FileServer(http.Dir(p.config.templateDir)))
@@ -61,15 +59,13 @@ func (p *proxy) start() {
 
 }
 
-
 func (p *proxy) proxy(w http.ResponseWriter, r *http.Request) (*Config, error) {
 
-	if p.config.forceFwSsl &&  "https" != r.Header.Get("x-forwarded-proto") {
+	if p.config.forceFwSsl && "https" != r.Header.Get("x-forwarded-proto") {
 
-		http.Redirect(w, r, fmt.Sprintf("https://%s%s", hostnameOf(r.Host), r.URL.String() ), http.StatusMovedPermanently)
+		http.Redirect(w, r, fmt.Sprintf("https://%s%s", hostnameOf(r.Host), r.URL.String()), http.StatusMovedPermanently)
 		return p.config, nil
 	}
-
 
 	host := hostnameOf(r.Host)
 	if server, err := p.domainResolver.resolve(host); err != nil {
@@ -93,7 +89,7 @@ func hostnameOf(host string) string {
 func reactivate(sp *StatusPage, c *Config) {
 	client, _ := c.getEtcdClient()
 	_, error := client.Set(c.servicePrefix+"/"+sp.error.status.service.name+"/"+sp.error.status.service.index+"/status/expected", STARTED_STATUS, 0)
-	if (error != nil) {
+	if error != nil {
 		glog.Errorf("Fail: setting expected state = 'started' for instance %s. Error:%s", sp.error.status.service.name, error)
 	}
 	glog.Infof("Instance %s is ready for re-activation", sp.error.status.service.name)

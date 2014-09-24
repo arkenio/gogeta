@@ -184,7 +184,7 @@ func getService(index string, name string, active bool) *Service {
 	}
 
 	return &Service{
-		index:      index,
+		index:    index,
 		location: &location{"127.0.0.1", 8080},
 		domain:   "dummydomain.com",
 		name:     name,
