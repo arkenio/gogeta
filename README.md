@@ -44,6 +44,7 @@ key part :
 Gogeta will loadbalance the requests on those two instances using a round robin implementation.
 
 
+
 Sample configuration
 --------------------
 
@@ -61,8 +62,8 @@ Service Status
 Optionnaly, services may have a status. This is a directory that is held at `/services/{serviceName}/{serviceIndex}/status`.
 It holds three values:
 
- * `current` :  The current status of the service in [stopped|starting|started|stopping]
- * `expected`: The expected status of the service [stopped|started]
+ * `current` :  The current status of the service in [stopped|starting|started|stopping|passivated]
+ * `expected`: The expected status of the service [stopped|started|passivated]
  * `alive`: a heartbeat that the service must update.
 
 Based on those values, Gogeta will serve wait pages with the according HTTP status code.
@@ -81,6 +82,43 @@ Several parameters allow to configure the way the proxy behave :
     * `Env` : EnvResolver
     * `Dummy` : DummyResolver
     * by default : IoEtcd
+
+
+Build and Test
+--------------
+
+Gogeta uses [GOM](https://github.com/mattn/gom) to build. Simply install GOM then :
+
+    gom build
+    gom install
+
+
+To run the test :
+
+    gom test
+
+There are integration tests that may be run. To do so you need to start an `etcd`
+server listening on port 4001. You may use the [Philip Southam](https://quay.io/repository/philipsoutham/etcd)
+etcd server docker image that is very small for instance. After that run
+
+    IT_Test=true gom test
+
+If you want a more interactive test session, we use [GoConvey](https://github.com/smartystreets/goconvey)
+that gives you a [web interface](http://localhost:8080) to show the tests execution. Each time a file is
+saved, the tests are reevaluated. To run it :
+
+    goconvey
+    IT_Test=true goconvey
+
+
+Run with Docker
+---------------
+
+You can run Gogeta thru Docker, since its image is build in the central Docker repository.
+
+    /usr/bin/docker run --rm --name gogeta -p 7777:7777 arken/gogeta
+
+
 
 Report & Contribute
 -------------------

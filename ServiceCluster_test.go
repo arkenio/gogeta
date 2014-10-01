@@ -125,7 +125,7 @@ func Test_Service(t *testing.T) {
 
 		Convey("When host is not the same", func() {
 			service2.location.Host = "otherhost"
-			Convey("Then they are equal", func() {
+			Convey("Then they are not equal", func() {
 
 				So(service1.equals(service2), ShouldEqual, false)
 
@@ -135,7 +135,7 @@ func Test_Service(t *testing.T) {
 
 		Convey("When port is not the same", func() {
 			service2.location.Port = 9090
-			Convey("Then they are equal", func() {
+			Convey("Then they are not equal", func() {
 
 				So(service1.equals(service2), ShouldEqual, false)
 
@@ -145,7 +145,7 @@ func Test_Service(t *testing.T) {
 
 		Convey("When current status is not the same", func() {
 			service2.status.current = "other"
-			Convey("Then they are equal", func() {
+			Convey("Then they are not equal", func() {
 
 				So(service1.equals(service2), ShouldEqual, false)
 
@@ -155,7 +155,7 @@ func Test_Service(t *testing.T) {
 
 		Convey("When expected status is not the same", func() {
 			service2.status.expected = "other"
-			Convey("Then they are equal", func() {
+			Convey("Then they are not equal", func() {
 
 				So(service1.equals(service2), ShouldEqual, false)
 
@@ -164,7 +164,7 @@ func Test_Service(t *testing.T) {
 		})
 		Convey("When alive status is not the same", func() {
 			service2.status.alive = "other"
-			Convey("Then they are equal", func() {
+			Convey("Then they are not equal", func() {
 
 				So(service1.equals(service2), ShouldEqual, false)
 
