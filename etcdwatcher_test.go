@@ -3,22 +3,26 @@ package main
 import (
 	"encoding/json"
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/coreos/go-etcd/etcd"
+	"github.com/arkenio/gogeta/itest"
 	"testing"
 	"time"
-	"os"
+
 )
 
 
 func Test_EtcdWatcher(t *testing.T) {
-	if os.Getenv("IT_Test") != "" {
-		IT_EtcdWatcher(t)
-	}
-}
 
-func IT_EtcdWatcher(t *testing.T) {
+	s := itest.NewItServer(4001)
+	s.Start()
 
+	time.Sleep(2 * time.Second)
 	c := parseConfig()
-	client, _ := c.getEtcdClient()
+
+	client := etcd.NewClient([]string{"http://localhost:4001/"})
+	if !client.SyncCluster() {
+		t.Fatal("Unable to Sync with etcd")
+	}
 
 	client.Delete("/domains", true)
 	client.Delete("/services", true)
@@ -175,6 +179,7 @@ func IT_EtcdWatcher(t *testing.T) {
 				})
 
 	})
+	s.Stop()
 
 }
 
