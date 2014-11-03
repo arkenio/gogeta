@@ -1,11 +1,11 @@
 package main
 
 import (
+	"github.com/golang/glog"
 	"os"
 	"os/signal"
 	"runtime/pprof"
 	"syscall"
-	"github.com/golang/glog"
 )
 
 const (
@@ -48,7 +48,6 @@ func main() {
 
 }
 
-
 func handleSignals() {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
@@ -61,7 +60,7 @@ func handleSignals() {
 			glog.Info("Shutting down...")
 			os.Exit(0)
 		case syscall.SIGUSR1:
-			pprof.Lookup("goroutine").WriteTo(os.Stdout, 1)
+			pprof.Lookup("goroutine").WriteTo(os.Stdout, 2)
 		}
 	}()
 
