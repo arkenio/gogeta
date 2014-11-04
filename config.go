@@ -18,6 +18,7 @@ type Config struct {
 	client             *etcd.Client
 	forceFwSsl         bool
 	UrlHeaderParam     string
+	cpuProfile         string
 }
 
 func (c *Config) getEtcdClient() (*etcd.Client, error) {
@@ -41,6 +42,7 @@ func parseConfig() *Config {
 	flag.StringVar(&config.UrlHeaderParam, "UrlHeaderParam", "", "Name of the param to inject the originating url")
 	flag.IntVar(&config.lastAccessInterval, "lastAccessInterval", 10, "Interval (in seconds to refresh last access time of a service")
 	flag.BoolVar(&config.forceFwSsl, "forceFwSsl", false, "If not x-forwarded-proto set to https, then redirecto to the equivalent https url")
+	flag.StringVar(&config.cpuProfile, "cpuProfile", "", "File to dump cpuProfile")
 	flag.Parse()
 
 	glog.Infof("Dumping Configuration")
@@ -53,6 +55,7 @@ func parseConfig() *Config {
 	glog.Infof("  lastAccessInterval: %d", config.lastAccessInterval)
 	glog.Infof("  forceFwSsl: %t", config.forceFwSsl)
 	glog.Infof("  UrlHeaderParam: %s", config.UrlHeaderParam)
+	glog.Infof("  cpuProfile: %s", config.cpuProfile)
 
 	return config
 }
