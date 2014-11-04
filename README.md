@@ -83,6 +83,13 @@ Several parameters allow to configure the way the proxy behave :
     * `Dummy` : DummyResolver
     * by default : IoEtcd
 
+Debug
+-----
+
+You can log all goroutines callstack by sending a SIGUSR1 signal to the process.
+
+    kill -SIGUSR1 `pidof gogeta`
+
 
 Build and Test
 --------------
