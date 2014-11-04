@@ -1,4 +1,4 @@
-FROM       arken/gom-base:0.1.0
+FROM       arken/gom-base
 MAINTAINER Damien Metzler <dmetzler@nuxeo.com>
 
 RUN go get github.com/arkenio/gogeta

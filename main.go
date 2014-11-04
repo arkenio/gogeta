@@ -6,6 +6,8 @@ import (
 	"os/signal"
 	"runtime/pprof"
 	"syscall"
+	"bufio"
+	"fmt"
 )
 
 const (
@@ -61,7 +63,33 @@ func handleSignals() {
 			os.Exit(0)
 		case syscall.SIGUSR1:
 			pprof.Lookup("goroutine").WriteTo(os.Stdout, 2)
+			profileFile := "/tmp/gogeta.profile"
+			DumpCPUProfile(profileFile)
+			FileToStdOut(profileFile)
 		}
+
 	}()
+}
+
+func DumpCPUProfile(filePath string)  {
+	f, err := os.Create(filePath)
+	if err == nil {
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
+}
+
+
+func FileToStdOut(filePath string) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		fmt.Sprintf("Unable to open file : ", filePath)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		fmt.Printf(scanner.Text())
+	}
 
 }
