@@ -3,11 +3,10 @@ package main
 import (
 	"encoding/json"
 	. "github.com/smartystreets/goconvey/convey"
+	"os"
 	"testing"
 	"time"
-	"os"
 )
-
 
 func Test_EtcdWatcher(t *testing.T) {
 	if os.Getenv("IT_Test") != "" {
@@ -163,16 +162,16 @@ func IT_EtcdWatcher(t *testing.T) {
 			})
 		})
 
-			Convey("When I passivate the service", func() {
-					client.Set("/services/my_service/1/status/current", STOPPED_STATUS, 0)
-					client.Set("/services/my_service/1/status/expected", PASSIVATED_STATUS, 0)
-					WaitEtcd()
-					Convey("Then the service should be starting", func() {
-							_, err := w.services["my_service"].Next()
-							So(err, ShouldNotBeNil)
-							So(err.(StatusError).computedStatus, ShouldEqual, PASSIVATED_STATUS)
-						})
-				})
+		Convey("When I passivate the service", func() {
+			client.Set("/services/my_service/1/status/current", STOPPED_STATUS, 0)
+			client.Set("/services/my_service/1/status/expected", PASSIVATED_STATUS, 0)
+			WaitEtcd()
+			Convey("Then the service should be starting", func() {
+				_, err := w.services["my_service"].Next()
+				So(err, ShouldNotBeNil)
+				So(err.(StatusError).computedStatus, ShouldEqual, PASSIVATED_STATUS)
+			})
+		})
 
 	})
 
