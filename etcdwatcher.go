@@ -76,7 +76,9 @@ func (w *watcher) watch(updateChannel chan *etcd.Response, stop chan struct{}, k
 			glog.Warningf("Gracefully closing the etcd watch for %s", key)
 			return
 		case response := <-updateChannel:
-			registerFunc(response.Node, response.Action)
+			if response != nil {
+				registerFunc(response.Node, response.Action)
+			}
 		default:
 			// Don't slam the etcd server
 			time.Sleep(time.Second)
