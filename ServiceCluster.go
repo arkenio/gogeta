@@ -34,7 +34,6 @@ func (cl *ServiceCluster) Next() (*Service, error) {
 
 	}
 
-
 	lastStatus := instance.status
 
 	if lastStatus == nil && !instance.location.isFullyDefined() {

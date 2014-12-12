@@ -6,6 +6,7 @@ import (
 	"github.com/golang/glog"
 	"regexp"
 	"strings"
+	"time"
 )
 
 // A watcher loads and watch the etcd hierarchy for domains and services.
@@ -38,10 +39,24 @@ func (w *watcher) init() {
 // etc... The register function is passed the etcd Node that has been loaded.
 func (w *watcher) loadAndWatch(etcdDir string, registerFunc func(*etcd.Node, string)) {
 	w.loadPrefix(etcdDir, registerFunc)
+	stop := make(chan struct{})
 
-	updateChannel := make(chan *etcd.Response, 10)
-	go w.watch(updateChannel, registerFunc)
-	w.client.Watch(etcdDir, (uint64)(0), true, updateChannel, nil)
+	for {
+		glog.Infof("Start watching %s", etcdDir)
+
+		updateChannel := make(chan *etcd.Response, 10)
+		go w.watch(updateChannel, stop, etcdDir, registerFunc)
+
+		_, err := w.client.Watch(etcdDir, (uint64)(0), true, updateChannel, nil)
+
+		//If we are here, this means etcd watch ended in an error
+		stop <- struct{}{}
+		glog.Errorf("Error when watching %s : %v", etcdDir, err)
+		glog.Errorf("Waiting 1 second and relaunch watch")
+		time.Sleep(time.Second)
+
+	}
+
 }
 
 func (w *watcher) loadPrefix(etcDir string, registerFunc func(*etcd.Node, string)) {
@@ -54,13 +69,18 @@ func (w *watcher) loadPrefix(etcDir string, registerFunc func(*etcd.Node, string
 	}
 }
 
-func (w *watcher) watch(updateChannel chan *etcd.Response, registerFunc func(*etcd.Node, string)) {
+func (w *watcher) watch(updateChannel chan *etcd.Response, stop chan struct{}, key string, registerFunc func(*etcd.Node, string)) {
 	for {
-		response := <-updateChannel
-		if response != nil {
+		select {
+		case <-stop:
+			glog.Warningf("Gracefully closing the etcd watch for %s", key)
+			return
+		case response := <-updateChannel:
 			registerFunc(response.Node, response.Action)
+		default:
+			// Don't slam the etcd server
+			time.Sleep(time.Second)
 		}
-
 	}
 }
 
