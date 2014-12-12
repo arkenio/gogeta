@@ -42,7 +42,7 @@ func parseConfig() *Config {
 	flag.StringVar(&config.UrlHeaderParam, "UrlHeaderParam", "", "Name of the param to inject the originating url")
 	flag.IntVar(&config.lastAccessInterval, "lastAccessInterval", 10, "Interval (in seconds to refresh last access time of a service")
 	flag.BoolVar(&config.forceFwSsl, "forceFwSsl", false, "If not x-forwarded-proto set to https, then redirecto to the equivalent https url")
-	flag.StringVar(&config.cpuProfile, "cpuProfile", "", "File to dump cpuProfile")
+	flag.StringVar(&config.cpuProfile, "cpuProfile", "/tmp/gogeta.prof", "File to dump cpuProfile")
 	flag.Parse()
 
 	glog.Infof("Dumping Configuration")
