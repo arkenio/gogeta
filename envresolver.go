@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/arkenio/goarken"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -11,14 +12,28 @@ import (
 
 type EnvResolver struct {
 	config          *Config
-	watcher         *watcher
-	services        map[string]*ServiceCluster
+	watcher         *goarken.Watcher
+	services        map[string]*goarken.ServiceCluster
 	dest2ProxyCache map[string]http.Handler
 }
 
 func NewEnvResolver(c *Config) *EnvResolver {
-	services := make(map[string]*ServiceCluster)
-	w, _ := NewEtcdWatcher(c, nil, services)
+	services := make(map[string]*goarken.ServiceCluster)
+
+	client, err := c.getEtcdClient()
+
+	if err != nil {
+		panic(err)
+	}
+
+	w := &goarken.Watcher{
+		Client:        client,
+		DomainPrefix:  "/domains",
+		ServicePrefix: "/services",
+		Domains:       nil,
+		Services:      services,
+	}
+
 	return &EnvResolver{c, w, services, make(map[string]http.Handler)}
 }
 
@@ -29,7 +44,7 @@ func (r *EnvResolver) resolve(domain string) (http.Handler, error) {
 	if serviceTree != nil {
 
 		if service, err := serviceTree.Next(); err != nil {
-			uri := fmt.Sprintf("http://%s:%d/", service.location.Host, service.location.Port)
+			uri := fmt.Sprintf("http://%s:%d/", service.Location.Host, service.Location.Port)
 			return r.getOrCreateProxyFor(uri), nil
 		}
 	}
@@ -39,7 +54,7 @@ func (r *EnvResolver) resolve(domain string) (http.Handler, error) {
 }
 
 func (r *EnvResolver) init() {
-	r.watcher.loadAndWatch(r.config.servicePrefix, r.watcher.registerService)
+	r.watcher.Init()
 }
 
 func (r *EnvResolver) redirectToStatusPage(domainName string) string {

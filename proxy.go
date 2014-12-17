@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/arkenio/goarken"
 	"github.com/golang/glog"
 	"net/http"
 	"strings"
@@ -38,15 +39,15 @@ func (ph proxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ph proxyHandler) OnError(w http.ResponseWriter, r *http.Request, error error, c *Config) {
-	if stError, ok := error.(StatusError); ok {
+	if stError, ok := error.(goarken.StatusError); ok {
 		sp := &StatusPage{c, stError}
 		// Check if status is passivated -> setting expected state = started
-		if sp.error.computedStatus == PASSIVATED_STATUS {
+		if sp.error.ComputedStatus == goarken.PASSIVATED_STATUS {
 			reactivate(sp, c)
 		}
 		sp.serve(w, r)
 	} else {
-		sp := &StatusPage{c, StatusError{"notfound", nil}}
+		sp := &StatusPage{c, goarken.StatusError{"notfound", nil}}
 		sp.serve(w, r)
 	}
 }
@@ -88,9 +89,9 @@ func hostnameOf(host string) string {
 
 func reactivate(sp *StatusPage, c *Config) {
 	client, _ := c.getEtcdClient()
-	_, error := client.Set(c.servicePrefix+"/"+sp.error.status.service.name+"/"+sp.error.status.service.index+"/status/expected", STARTED_STATUS, 0)
+	_, error := client.Set(c.servicePrefix+"/"+sp.error.Status.Service.Name+"/"+sp.error.Status.Service.Index+"/status/expected", goarken.STARTED_STATUS, 0)
 	if error != nil {
-		glog.Errorf("Fail: setting expected state = 'started' for instance %s. Error:%s", sp.error.status.service.name, error)
+		glog.Errorf("Fail: setting expected state = 'started' for instance %s. Error:%s", sp.error.Status.Service.Name, error)
 	}
-	glog.Infof("Instance %s is ready for re-activation", sp.error.status.service.name)
+	glog.Infof("Instance %s is ready for re-activation", sp.error.Status.Service.Name)
 }
