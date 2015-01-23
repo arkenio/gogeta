@@ -51,7 +51,7 @@ Sample configuration
 To summarize, here are the keys needed to proxy `customdomain.com` to `172.41.4.5:42654`
 
 
-    /services/myService/location = {"host":"172.41.4.5", "port": 42654}
+    /services/myService/1/location = {"host":"172.41.4.5", "port": 42654}
     /domains/mycustomdomain.com/type = service
     /domains/mycustomdomain.com/value = myService
 
