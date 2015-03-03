@@ -6,6 +6,7 @@ WORKDIR /usr/local/go/src/github.com/arkenio/gogeta
 #RUN git checkout v0.3.0
 RUN gom install
 RUN gom test
+RUN gom build
 
 EXPOSE 7777
-ENTRYPOINT ["gogeta", "-etcdAddress", "http://172.17.42.1:4001", "-alsologtostderr=true"]
+ENTRYPOINT ["/usr/local/go/src/github.com/arkenio/gogeta/gogeta", "-etcdAddress", "http://172.17.42.1:4001", "-alsologtostderr=true"]
