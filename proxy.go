@@ -54,13 +54,17 @@ func (ph proxyHandler) OnError(w http.ResponseWriter, r *http.Request, error err
 func (p *proxy) start() {
 	glog.Infof("Listening on port %d", p.config.port)
 	http.Handle("/__static__/", http.FileServer(http.Dir(p.config.templateDir)))
-	http.HandleFunc("/robots.txt", robots)
+	http.HandleFunc("/robots.txt", p.robots)
 	http.Handle("/", proxyHandler(p.proxy))
 	glog.Fatalf("%s", http.ListenAndServe(fmt.Sprintf(":%d", p.config.port), nil))
 
 }
 
-func robots(w http.ResponseWriter, r *http.Request) {
+func (p *proxy) robots(w http.ResponseWriter, r *http.Request) {
+	host := hostnameOf(r.Host)
+	if server, err := p.domainResolver.resolve(host); err == nil {
+		// XXX Check if domain can handle or not robot.txt
+	}
 	fmt.Fprint(w, "User-agent: *\nDisallow: /")
 }
 
