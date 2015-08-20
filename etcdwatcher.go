@@ -94,7 +94,7 @@ func (w *watcher) registerDomain(node *etcd.Node, action string) {
 	response, err := w.client.Get(domainKey, true, false)
 
 	if action == "delete" || action == "expire" {
-		if (w.isDomainConfiguration(node)) {
+		if w.isDomainConfiguration(node) {
 			w.removeDomainConfiguration(node)
 		} else {
 			w.RemoveDomain(domainName)
@@ -112,7 +112,7 @@ func (w *watcher) registerDomain(node *etcd.Node, action string) {
 				domain.value = node.Value
 			}
 
-			if (w.isDomainConfiguration(node)) {
+			if w.isDomainConfiguration(node) {
 				key, value := w.getDomainConfiguration(node)
 				w.domains[w.getDomainForNode(node)].config[key] = value
 			}
@@ -127,8 +127,7 @@ func (w *watcher) registerDomain(node *etcd.Node, action string) {
 	}
 }
 
-
-func (w *watcher) isDomainConfiguration(node *etcd.Node) (bool) {
+func (w *watcher) isDomainConfiguration(node *etcd.Node) bool {
 	r := regexp.MustCompile(w.config.domainPrefix + "/.*/config.*")
 	return r.MatchString(node.Key)
 }
@@ -140,7 +139,7 @@ func (w *watcher) getDomainConfiguration(node *etcd.Node) (string, string) {
 
 func (w *watcher) removeDomainConfiguration(node *etcd.Node) {
 	r := regexp.MustCompile(w.config.domainPrefix + "/(.*)/config/(.+)")
-	if (r.MatchString(node.Key)) {
+	if r.MatchString(node.Key) {
 		delete(w.domains[r.FindStringSubmatch(node.Key)[1]].config, strings.Split(r.FindStringSubmatch(node.Key)[2], "/")[0])
 	}
 }
@@ -181,6 +180,7 @@ func (w *watcher) registerService(node *etcd.Node, action string) {
 			serviceIndex := w.getEnvIndexForNode(indexNode)
 			serviceKey := w.config.servicePrefix + "/" + serviceName + "/" + serviceIndex
 			statusKey := serviceKey + "/status"
+			configKey := serviceKey + "/config"
 
 			response, err := w.client.Get(serviceKey, true, true)
 
@@ -192,6 +192,7 @@ func (w *watcher) registerService(node *etcd.Node, action string) {
 
 				service := &Service{}
 				service.location = &location{}
+				service.config = &ServiceConfig{}
 				service.index = serviceIndex
 				service.nodeKey = serviceKey
 				service.name = serviceName
@@ -210,6 +211,18 @@ func (w *watcher) registerService(node *etcd.Node, action string) {
 						if err == nil {
 							service.location.Host = location.Host
 							service.location.Port = location.Port
+						}
+
+					case configKey:
+						for _, subNode := range node.Nodes {
+							switch subNode.Key {
+							case configKey + "/gogeta":
+								serviceConfig := &ServiceConfig{}
+								err := json.Unmarshal([]byte(subNode.Value), serviceConfig)
+								if err == nil {
+									service.config = serviceConfig
+								}
+							}
 						}
 
 					case serviceKey + "/domain":

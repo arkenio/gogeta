@@ -3,7 +3,7 @@ MAINTAINER Damien Metzler <dmetzler@nuxeo.com>
 
 RUN go get github.com/arkenio/gogeta
 WORKDIR /usr/local/go/src/github.com/arkenio/gogeta
-#RUN git checkout v0.3.0
+RUN git checkout feature-NXIO-477-robot.txt_handler
 RUN gom install
 RUN gom test
 RUN gom build

@@ -6,8 +6,6 @@ import (
 	"github.com/golang/glog"
 	"net"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -20,8 +18,8 @@ const (
 )
 
 type Domain struct {
-	typ   string
-	value string
+	typ    string
+	value  string
 	config map[string]string
 }
 
@@ -44,6 +42,10 @@ func (s *location) isFullyDefined() bool {
 	return s.Host != "" && s.Port != 0
 }
 
+type ServiceConfig struct {
+	Robots string `json:"robots"`
+}
+
 type Service struct {
 	index      string
 	nodeKey    string
@@ -51,6 +53,7 @@ type Service struct {
 	domain     string
 	name       string
 	status     *Status
+	config     *ServiceConfig
 	lastAccess *time.Time
 }
 
@@ -116,13 +119,13 @@ func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, error) {
 				addr := net.JoinHostPort(service.location.Host, strconv.Itoa(service.location.Port))
 				uri := fmt.Sprintf("http://%s/", addr)
 				r.setLastAccessTime(service)
-				return r.getOrCreateProxyFor(uri), nil
+				return r.getOrCreateProxyFor(service, uri), nil
 
 			} else {
 				return nil, err
 			}
 		case URI_DOMAINTYPE:
-			return r.getOrCreateProxyFor(domain.value), nil
+			return r.getOrCreateProxyFor(nil, domain.value), nil
 		}
 
 	}
@@ -156,42 +159,11 @@ func (r *IoEtcdResolver) setLastAccessTime(service *Service) {
 
 }
 
-func (r *IoEtcdResolver) getOrCreateProxyFor(uri string) http.Handler {
+func (r *IoEtcdResolver) getOrCreateProxyFor(s *Service, uri string) http.Handler {
 	if _, ok := r.dest2ProxyCache[uri]; !ok {
-		dest, _ := url.Parse(uri)
-		r.dest2ProxyCache[uri] = r.NewSingleHostReverseProxy(dest)
+		r.dest2ProxyCache[uri] = NewServiceMux(r.config, s, uri)
 	}
 	return r.dest2ProxyCache[uri]
-}
-
-func (r *IoEtcdResolver) NewSingleHostReverseProxy(target *url.URL) *httputil.ReverseProxy {
-	targetQuery := target.RawQuery
-	director := func(req *http.Request) {
-		req.URL.Scheme = target.Scheme
-		req.URL.Host = target.Host
-		req.URL.Path = singleJoiningSlash(target.Path, req.URL.Path)
-		if targetQuery == "" || req.URL.RawQuery == "" {
-			req.URL.RawQuery = targetQuery + req.URL.RawQuery
-		} else {
-			req.URL.RawQuery = targetQuery + "&" + req.URL.RawQuery
-		}
-
-		// FIXME : Nuxeo hack to be able to add a virtual-host header param.
-		// To be removed as soon as possible
-		if r.config.UrlHeaderParam != "" {
-			scheme := req.Header.Get("x-forwarded-proto")
-			host := req.Host
-			port := req.Header.Get("x-forwarded-port")
-			url := ""
-			if ("https" == scheme && "443" == port) || ("http" == scheme && "80" == port) {
-				url = fmt.Sprintf("%s://%s/", scheme, host)
-			} else {
-				url = fmt.Sprintf("%s://%s:%s/", scheme, host, port)
-			}
-			req.Header.Add(r.config.UrlHeaderParam, url)
-		}
-	}
-	return &httputil.ReverseProxy{Director: director}
 }
 
 func singleJoiningSlash(a, b string) string {
