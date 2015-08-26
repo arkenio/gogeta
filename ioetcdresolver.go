@@ -97,7 +97,7 @@ func (config *ServiceConfig) equals(other *ServiceConfig) bool {
 	}
 
 	return config != nil && other != nil &&
-		strings.Compare(config.Robots, other.Robots) == 0
+		config.Robots == other.Robots
 }
 
 func (service *Service) equals(other *Service) bool {
