@@ -94,11 +94,7 @@ func (w *watcher) registerDomain(node *etcd.Node, action string) {
 	response, err := w.client.Get(domainKey, true, false)
 
 	if action == "delete" || action == "expire" {
-		if w.isDomainConfiguration(node) {
-			w.removeDomainConfiguration(node)
-		} else {
-			w.RemoveDomain(domainName)
-		}
+		w.RemoveDomain(domainName)
 		return
 	}
 
@@ -111,11 +107,6 @@ func (w *watcher) registerDomain(node *etcd.Node, action string) {
 			case domainKey + "/value":
 				domain.value = node.Value
 			}
-
-			if w.isDomainConfiguration(node) {
-				key, value := w.getDomainConfiguration(node)
-				w.domains[w.getDomainForNode(node)].config[key] = value
-			}
 		}
 
 		actualDomain := w.domains[domainName]
@@ -123,29 +114,14 @@ func (w *watcher) registerDomain(node *etcd.Node, action string) {
 		if domain.typ != "" && domain.value != "" && !domain.equals(actualDomain) {
 			w.domains[domainName] = domain
 			glog.Infof("Registered domain %s with (%s) %s", domainName, domain.typ, domain.value)
+
 		}
-	}
-}
-
-func (w *watcher) isDomainConfiguration(node *etcd.Node) bool {
-	r := regexp.MustCompile(w.config.domainPrefix + "/.*/config.*")
-	return r.MatchString(node.Key)
-}
-
-func (w *watcher) getDomainConfiguration(node *etcd.Node) (string, string) {
-	r := regexp.MustCompile(w.config.domainPrefix + "/.*/config/(.+)")
-	return strings.Split(r.FindStringSubmatch(node.Key)[1], "/")[0], node.Value
-}
-
-func (w *watcher) removeDomainConfiguration(node *etcd.Node) {
-	r := regexp.MustCompile(w.config.domainPrefix + "/(.*)/config/(.+)")
-	if r.MatchString(node.Key) {
-		delete(w.domains[r.FindStringSubmatch(node.Key)[1]].config, strings.Split(r.FindStringSubmatch(node.Key)[2], "/")[0])
 	}
 }
 
 func (w *watcher) RemoveDomain(key string) {
 	delete(w.domains, key)
+
 }
 
 func (w *watcher) getDomainForNode(node *etcd.Node) string {

@@ -18,9 +18,8 @@ const (
 )
 
 type Domain struct {
-	typ    string
-	value  string
-	config map[string]string
+	typ   string
+	value string
 }
 
 type location struct {
