@@ -145,9 +145,16 @@ func (w *watcher) RemoveEnv(serviceName string) {
 
 func (w *watcher) registerService(node *etcd.Node, action string) {
 	serviceName := w.getEnvForNode(node)
+	serviceNodeKey := w.config.servicePrefix + "/" + serviceName
+
+	if action == "delete" && serviceNodeKey == node.Key {
+		glog.Infof("Removing service %s", serviceName)
+		w.RemoveEnv(serviceName)
+		return
+	}
 
 	// Get service's root node instead of changed node.
-	serviceNode, err := w.client.Get(w.config.servicePrefix+"/"+serviceName, true, true)
+	serviceNode, err := w.client.Get(serviceNodeKey, true, true)
 
 	if err == nil {
 
@@ -168,16 +175,10 @@ func (w *watcher) registerService(node *etcd.Node, action string) {
 
 				service := &Service{}
 				service.location = &location{}
-				service.config = &ServiceConfig{}
+				service.config = &ServiceConfig{Robots: ""}
 				service.index = serviceIndex
 				service.nodeKey = serviceKey
 				service.name = serviceName
-
-				if action == "delete" {
-					glog.Infof("Removing service %s", serviceName)
-					w.RemoveEnv(serviceName)
-					return
-				}
 
 				for _, node := range response.Node.Nodes {
 					switch node.Key {

@@ -61,14 +61,14 @@ type IoEtcdResolver struct {
 	watcher         *watcher
 	domains         map[string]*Domain
 	services        map[string]*ServiceCluster
-	dest2ProxyCache map[string]http.Handler
+	dest2ProxyCache map[string]*ServiceMux
 	watchIndex      uint64
 }
 
 func NewEtcdResolver(c *Config) (*IoEtcdResolver, error) {
 	domains := make(map[string]*Domain)
 	services := make(map[string]*ServiceCluster)
-	dest2ProxyCache := make(map[string]http.Handler)
+	dest2ProxyCache := make(map[string]*ServiceMux)
 	w, error := NewEtcdWatcher(c, domains, services)
 
 	if error != nil {
@@ -91,6 +91,15 @@ func (domain *Domain) equals(other *Domain) bool {
 		domain.typ == other.typ && domain.value == other.value
 }
 
+func (config *ServiceConfig) equals(other *ServiceConfig) bool {
+	if config == nil && other == nil {
+		return true
+	}
+
+	return config != nil && other != nil &&
+		strings.Compare(config.Robots, other.Robots) == 0
+}
+
 func (service *Service) equals(other *Service) bool {
 	if service == nil && other == nil {
 		return true
@@ -98,7 +107,9 @@ func (service *Service) equals(other *Service) bool {
 
 	return service != nil && other != nil &&
 		service.location.equals(other.location) &&
-		service.status.equals(other.status)
+		service.status.equals(other.status) &&
+		service.config.equals(other.config)
+
 }
 
 func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, error) {
@@ -159,7 +170,8 @@ func (r *IoEtcdResolver) setLastAccessTime(service *Service) {
 }
 
 func (r *IoEtcdResolver) getOrCreateProxyFor(s *Service, uri string) http.Handler {
-	if _, ok := r.dest2ProxyCache[uri]; !ok {
+	if serviceMux, ok := r.dest2ProxyCache[uri]; !ok || !serviceMux.service.equals(s) {
+		glog.Infof("Creating a new muxer for : %s", s.name)
 		r.dest2ProxyCache[uri] = NewServiceMux(r.config, s, uri)
 	}
 	return r.dest2ProxyCache[uri]

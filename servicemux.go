@@ -14,6 +14,7 @@ type ServiceMux struct {
 }
 
 func NewServiceMux(c *Config, s *Service, proxyDest string) *ServiceMux {
+
 	dest, _ := url.Parse(proxyDest)
 	r := &ServiceMux{service: s, internalProxy: NewSingleHostReverseProxy(c, dest)}
 	r.init()

@@ -173,10 +173,36 @@ func IT_EtcdWatcher(t *testing.T) {
 			})
 		})
 
+		Convey("When I add a gogeta config value", func() {
+			client.Set("/services/my_service/1/status/current", "started", 0)
+			client.Set("/services/my_service/1/status/alive", "1", 0)
+			WaitEtcd()
+			service, err := w.services["my_service"].Next()
+			So(err, ShouldBeNil)
+			So(service.config, ShouldNotBeNil)
+			So(service.config.Robots, ShouldEqual, "")
+			b, _ := json.Marshal(&ServiceConfig{Robots: "UserAgent: *"})
+			client.Set("/services/my_service/1/config/gogeta", string(b[:]), 0)
+			WaitEtcd()
+			Convey("Then the robots config should be set", func() {
+				service, _ = w.services["my_service"].Next()
+				So(service.config.Robots, ShouldEqual, "UserAgent: *")
+			})
+		})
+
+		Convey("When I add a gogeta config value", func() {
+			client.Delete("/services/my_service/1/config/gogeta", true)
+			WaitEtcd()
+			Convey("Then the robots config should be set", func() {
+				service, _ := w.services["my_service"].Next()
+				So(service.config.Robots, ShouldEqual, "")
+			})
+		})
+
 	})
 
 }
 
 func WaitEtcd() {
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 }
