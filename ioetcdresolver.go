@@ -20,7 +20,7 @@ const (
 
 type IoEtcdResolver struct {
 	config          *Config
-	watcher         *goarken.watcher
+	watcher         *goarken.Watcher
 	domains         map[string]*goarken.Domain
 	services        map[string]*goarken.ServiceCluster
 	dest2ProxyCache map[string]*ServiceMux
@@ -29,8 +29,8 @@ type IoEtcdResolver struct {
 
 func NewEtcdResolver(c *Config) (*IoEtcdResolver, error) {
 
-	domains := make(map[string]*Domain)
-	services := make(map[string]*ServiceCluster)
+	domains := make(map[string]*goarken.Domain)
+	services := make(map[string]*goarken.ServiceCluster)
 	dest2ProxyCache := make(map[string]*ServiceMux)
 
 	client, err := c.getEtcdClient()
@@ -50,7 +50,7 @@ func NewEtcdResolver(c *Config) (*IoEtcdResolver, error) {
 }
 
 func (r *IoEtcdResolver) init() {
-	r.watcher.init()
+	r.watcher.Init()
 }
 
 type ServiceConfig struct {
@@ -89,7 +89,7 @@ func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, error) {
 				return nil, err
 			}
 		case URI_DOMAINTYPE:
-			return r.getOrCreateProxyFor(nil, domain.value), nil
+			return r.getOrCreateProxyFor(nil, domain.Value), nil
 		}
 
 	}
@@ -123,9 +123,9 @@ func (r *IoEtcdResolver) setLastAccessTime(service *goarken.Service) {
 
 }
 
-func (r *IoEtcdResolver) getOrCreateProxyFor(s *Service, uri string) http.Handler {
-	if serviceMux, ok := r.dest2ProxyCache[uri]; !ok || !serviceMux.service.equals(s) {
-		glog.Infof("Creating a new muxer for : %s", s.name)
+func (r *IoEtcdResolver) getOrCreateProxyFor(s *goarken.Service, uri string) http.Handler {
+	if serviceMux, ok := r.dest2ProxyCache[uri]; !ok || !serviceMux.service.Equals(s) {
+		glog.Infof("Creating a new muxer for : %s", s.Name)
 		r.dest2ProxyCache[uri] = NewServiceMux(r.config, s, uri)
 	}
 	return r.dest2ProxyCache[uri]

@@ -2,18 +2,19 @@ package main
 
 import (
 	"fmt"
+	"github.com/arkenio/goarken"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 )
 
 type ServiceMux struct {
-	service       *Service
+	service       *goarken.Service
 	serveMux      *http.ServeMux
 	internalProxy *httputil.ReverseProxy
 }
 
-func NewServiceMux(c *Config, s *Service, proxyDest string) *ServiceMux {
+func NewServiceMux(c *Config, s *goarken.Service, proxyDest string) *ServiceMux {
 
 	dest, _ := url.Parse(proxyDest)
 	r := &ServiceMux{service: s, internalProxy: NewSingleHostReverseProxy(c, dest)}
@@ -30,8 +31,8 @@ func (p *ServiceMux) init() {
 }
 
 func (p *ServiceMux) robots(w http.ResponseWriter, r *http.Request) {
-	if p.service.config.Robots != "" {
-		fmt.Fprint(w, p.service.config.Robots)
+	if p.service.Config.Robots != "" {
+		fmt.Fprint(w, p.service.Config.Robots)
 	} else {
 		fmt.Fprint(w, "User-agent: *\nDisallow: /")
 	}
