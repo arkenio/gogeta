@@ -62,7 +62,7 @@ Service Status
 Optionnaly, services may have a status. This is a directory that is held at `/services/{serviceName}/{serviceIndex}/status`.
 It holds three values:
 
- * `current` :  The current status of the service in [stopped|starting|started|stopping|passivated]
+ * `current`: The current status of the service in [stopped|starting|started|stopping|passivated]
  * `expected`: The expected status of the service [stopped|started|passivated]
  * `alive`: a heartbeat that the service must update.
 
@@ -77,10 +77,10 @@ Several parameters allow to configure the way the proxy behave :
  * `serviceDir` allows to select the prefix of the key where it watches for environments
  * `etcdAddress` specify the address of the `etcd` server
  * `port` port to listen
- * `templateDir` a template directory for eroor status page
- * `resolverType` : choose the resolver to use
-    * `Env` : EnvResolver
-    * `Dummy` : DummyResolver
+ * `templateDir` a template directory for error status page
+ * `resolverType`: choose the resolver to use
+    * `Env`: EnvResolver
+    * `Dummy`: DummyResolver
     * by default : IoEtcd
 
 Debug
