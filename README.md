@@ -59,7 +59,7 @@ To summarize, here are the keys needed to proxy `customdomain.com` to `172.41.4.
 Service Status
 --------------
 
-Optionnaly, services may have a status. This is a directory that is held at `/services/{serviceName}/{serviceIndex}/status`.
+Optionally, services may have a status. This is a directory that is held at `/services/{serviceName}/{serviceIndex}/status`.
 It holds three values:
 
  * `current`: The current status of the service in [stopped|starting|started|stopping|passivated]
