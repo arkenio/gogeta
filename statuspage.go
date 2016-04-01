@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/arkenio/goarken"
+	goarken "github.com/arkenio/goarken/model"
 	"html/template"
 	"net/http"
 )

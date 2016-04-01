@@ -3,7 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/arkenio/goarken"
+	goarken "github.com/arkenio/goarken/model"
+	"github.com/arkenio/goarken/storage"
 	"github.com/golang/glog"
 	"net"
 	"net/http"
@@ -20,17 +21,13 @@ const (
 
 type IoEtcdResolver struct {
 	config          *Config
-	watcher         *goarken.Watcher
-	domains         map[string]*goarken.Domain
-	services        map[string]*goarken.ServiceCluster
+	arkenModel		*goarken.Model
 	dest2ProxyCache map[string]*ServiceMux
 	watchIndex      uint64
 }
 
 func NewEtcdResolver(c *Config) (*IoEtcdResolver, error) {
 
-	domains := make(map[string]*goarken.Domain)
-	services := make(map[string]*goarken.ServiceCluster)
 	dest2ProxyCache := make(map[string]*ServiceMux)
 
 	client, err := c.getEtcdClient()
@@ -38,20 +35,24 @@ func NewEtcdResolver(c *Config) (*IoEtcdResolver, error) {
 	if err != nil {
 		panic(err)
 	}
-	w := &goarken.Watcher{
-		Client:        client,
-		DomainPrefix:  "/domains",
-		ServicePrefix: "/services",
-		Domains:       domains,
-		Services:      services,
+
+
+	persistenceDriver := storage.NewWatcher(client, "/services", "/domains")
+
+	arkenModel, err := goarken.NewArkenModel(nil, persistenceDriver )
+	if err != nil {
+		return nil,err
 	}
 
-	return &IoEtcdResolver{c, w, domains, services, dest2ProxyCache, 0}, nil
+
+	return &IoEtcdResolver{c, arkenModel, dest2ProxyCache, 0}, nil
 }
 
+
 func (r *IoEtcdResolver) init() {
-	r.watcher.Init()
+
 }
+
 
 type ServiceConfig struct {
 	Robots string `json:"robots"`
@@ -68,17 +69,17 @@ func (config *ServiceConfig) equals(other *ServiceConfig) bool {
 
 func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, error) {
 	glog.V(5).Infof("Looking for domain : %s ", domainName)
-	domain := r.domains[domainName]
-	glog.V(5).Infof("Services:%s", r.services)
+	domain := r.arkenModel.Domains[domainName]
+	glog.V(5).Infof("Services:%s", r.arkenModel.Services)
 	if domain != nil {
-		service := r.services[domain.Value]
+		service := r.arkenModel.Services[domain.Value]
 		if service == nil {
 			glog.Errorf("The services map doesn't contain service with the domain value: %s", domain.Value)
 		}
 		switch domain.Typ {
 
 		case SERVICE_DOMAINTYTPE:
-			service, err := r.services[domain.Value].Next()
+			service, err := r.arkenModel.Services[domain.Value].Next()
 			if err == nil && service.Location.IsFullyDefined() {
 				addr := net.JoinHostPort(service.Location.Host, strconv.Itoa(service.Location.Port))
 				uri := fmt.Sprintf("http://%s/", addr)
