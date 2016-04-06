@@ -9,4 +9,4 @@ RUN gom test
 RUN gom build
 
 EXPOSE 7777
-ENTRYPOINT ["/usr/local/go/src/github.com/arkenio/gogeta/gogeta", "-etcdAddress", "http://172.17.42.1:4001", "-alsologtostderr=true"]
+ENTRYPOINT ["/usr/local/go/src/github.com/arkenio/gogeta/gogeta", "-etcdAddress", "http://etcd:2379/", "-alsologtostderr=true"]

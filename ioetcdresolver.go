@@ -6,6 +6,7 @@ import (
 	goarken "github.com/arkenio/goarken/model"
 	"github.com/arkenio/goarken/storage"
 	"github.com/golang/glog"
+	"golang.org/x/net/context"
 	"net"
 	"net/http"
 	"strconv"
@@ -21,7 +22,7 @@ const (
 
 type IoEtcdResolver struct {
 	config          *Config
-	arkenModel		*goarken.Model
+	arkenModel      *goarken.Model
 	dest2ProxyCache map[string]*ServiceMux
 	watchIndex      uint64
 }
@@ -36,23 +37,19 @@ func NewEtcdResolver(c *Config) (*IoEtcdResolver, error) {
 		panic(err)
 	}
 
-
 	persistenceDriver := storage.NewWatcher(client, "/services", "/domains")
 
-	arkenModel, err := goarken.NewArkenModel(nil, persistenceDriver )
+	arkenModel, err := goarken.NewArkenModel(nil, persistenceDriver)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
-
 
 	return &IoEtcdResolver{c, arkenModel, dest2ProxyCache, 0}, nil
 }
 
-
 func (r *IoEtcdResolver) init() {
 
 }
-
 
 type ServiceConfig struct {
 	Robots string `json:"robots"`
@@ -114,7 +111,8 @@ func (r *IoEtcdResolver) setLastAccessTime(service *goarken.Service) {
 		service.LastAccess = &now
 
 		t := service.LastAccess.Format(TIME_FORMAT)
-		_, error = client.Set(lastAccessKey, t, 0)
+		//TODO: use model
+		_, error = client.Set(context.Background(), lastAccessKey, t, nil)
 
 		glog.V(5).Infof("Settign lastAccessKey to :%s", t)
 		if error != nil {

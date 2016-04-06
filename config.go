@@ -1,10 +1,10 @@
 package main
 
 import (
-	"errors"
 	"flag"
-	"github.com/coreos/go-etcd/etcd"
+	"github.com/coreos/etcd/client"
 	"github.com/golang/glog"
+	"time"
 )
 
 type Config struct {
@@ -15,20 +15,30 @@ type Config struct {
 	resolverType       string
 	templateDir        string
 	lastAccessInterval int
-	client             *etcd.Client
+	client             client.KeysAPI
 	forceFwSsl         bool
 	UrlHeaderParam     string
 	cpuProfile         string
 }
 
-func (c *Config) getEtcdClient() (*etcd.Client, error) {
+func (c *Config) getEtcdClient() (client.KeysAPI, error) {
 	if c.client == nil {
-		c.client = etcd.NewClient([]string{c.etcdAddress})
-		if !c.client.SyncCluster() {
-			return nil, errors.New("Unable to sync with etcd cluster, check your configuration or etcd status")
+
+		cfg := client.Config{
+			Endpoints:               []string{c.etcdAddress},
+			Transport:               client.DefaultTransport,
+			HeaderTimeoutPerRequest: time.Second,
 		}
+
+		cl, err := client.New(cfg)
+		if err != nil {
+			panic(err)
+		}
+
+		c.client = client.NewKeysAPI(cl)
 	}
 	return c.client, nil
+
 }
 
 func parseConfig() *Config {

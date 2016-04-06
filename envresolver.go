@@ -13,7 +13,7 @@ import (
 
 type EnvResolver struct {
 	config          *Config
-	arkenModel		*model.Model
+	arkenModel      *model.Model
 	dest2ProxyCache map[string]http.Handler
 }
 
@@ -25,14 +25,12 @@ func NewEnvResolver(c *Config) *EnvResolver {
 		panic(err)
 	}
 
-
 	persistenceDriver := storage.NewWatcher(client, "/services", "/domains")
 
-	arkenModel, err := model.NewArkenModel(nil, persistenceDriver )
+	arkenModel, err := model.NewArkenModel(nil, persistenceDriver)
 	if err != nil {
 		return nil
 	}
-
 
 	return &EnvResolver{c, arkenModel, make(map[string]http.Handler)}
 }
