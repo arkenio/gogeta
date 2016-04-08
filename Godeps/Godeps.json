@@ -1,0 +1,51 @@
+{
+	"ImportPath": "github.com/arkenio/gogeta",
+	"GoVersion": "go1.5",
+	"GodepVersion": "v62",
+	"Deps": [
+		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.10.0",
+			"Rev": "4b6ea7319e214d98c938f12692336f7ca9348d6b"
+		},
+		{
+			"ImportPath": "github.com/arkenio/goarken/model",
+			"Rev": "e7903fe0d5a896ea17c6deb0304a9f23ba1407b0"
+		},
+		{
+			"ImportPath": "github.com/arkenio/goarken/storage",
+			"Rev": "e7903fe0d5a896ea17c6deb0304a9f23ba1407b0"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/client",
+			"Comment": "v2.3.0-295-g4041bbe",
+			"Rev": "4041bbe571432b6bc4bdd0a5408d55aba545b040"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/pkg/pathutil",
+			"Comment": "v2.3.0-295-g4041bbe",
+			"Rev": "4041bbe571432b6bc4bdd0a5408d55aba545b040"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/pkg/types",
+			"Comment": "v2.3.0-295-g4041bbe",
+			"Rev": "4041bbe571432b6bc4bdd0a5408d55aba545b040"
+		},
+		{
+			"ImportPath": "github.com/golang/glog",
+			"Rev": "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
+		},
+		{
+			"ImportPath": "github.com/ugorji/go/codec",
+			"Rev": "a396ed22fc049df733440d90efe17475e3929ccb"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "e45385e9b226f570b1f086bf287b25d3d4117776"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "a80ff226bd294315526e7ae48959d55635143ea7"
+		}
+	]
+}

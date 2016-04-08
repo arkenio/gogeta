@@ -1,9 +1,13 @@
 language: go
 go:
-- tip
+- 1.5
 before_install:
-- go get github.com/mattn/gom
+- go get github.com/tools/godep
 script:
-- $HOME/gopath/bin/gom install
-- $HOME/gopath/bin/gom build -o bin/gogeta
-- $HOME/gopath/bin/gom test
+- godep restore
+- godep go build ./...
+- godep go test 
+- godep go test ./storage
+- godep go test ./drivers
+- godep go test ./model
+

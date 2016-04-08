@@ -1,6 +1,0 @@
-gom 'github.com/coreos/etcd/client', :tags => 'v2.3.1'
-gom 'github.com/arkenio/goarken', :branch => 'arkenv2'
-gom 'github.com/smartystreets/goconvey', :commit => '010bae7420a218c99d00a4ad6045625966f504b9'
-gom 'github.com/jacobsa/oglematchers',  :commit => '4fc24f97b5b74022c2a3f4ca7eed57ca29083d3e'
-gom 'github.com/golang/glog', :commit => 'd1c4472bf2efd3826f2b5bdcc02d8416798d678c'
-gom 'golang.org/x/net/context'

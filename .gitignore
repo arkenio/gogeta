@@ -13,6 +13,7 @@ _test
 *.[568vq]
 [568vq].out
 _vendor
+vendor
 *.cgo1.go
 *.cgo2.c
 _cgo_defun.c
