@@ -5,6 +5,7 @@ import (
 	"github.com/coreos/etcd/client"
 	"github.com/golang/glog"
 	"time"
+	"golang.org/x/net/context"
 )
 
 type Config struct {
@@ -32,8 +33,14 @@ func (c *Config) getEtcdClient() (client.KeysAPI, error) {
 
 		cl, err := client.New(cfg)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
+
+		err = cl.Sync(context.Background())
+		if err != nil {
+			return nil, err
+		}
+
 
 		c.client = client.NewKeysAPI(cl)
 	}

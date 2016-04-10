@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"runtime/pprof"
 	"syscall"
+	"github.com/prometheus/common/log"
 )
 
 const (
@@ -46,7 +47,8 @@ func main() {
 
 	resolver, error := getResolver(c)
 	if error != nil {
-		panic(error)
+		log.Errorf("Unable to start a resolver : %v", error)
+		os.Exit(1)
 	} else {
 
 		resolver.init()

@@ -34,10 +34,10 @@ func NewEtcdResolver(c *Config) (*IoEtcdResolver, error) {
 	client, err := c.getEtcdClient()
 
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	persistenceDriver := storage.NewWatcher(client, "/services", "/domains")
+	persistenceDriver := storage.NewWatcher(client, c.servicePrefix, c.domainPrefix)
 
 	arkenModel, err := goarken.NewArkenModel(nil, persistenceDriver)
 	if err != nil {
