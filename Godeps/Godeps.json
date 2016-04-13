@@ -10,11 +10,11 @@
 		},
 		{
 			"ImportPath": "github.com/arkenio/goarken/model",
-			"Rev": "e7903fe0d5a896ea17c6deb0304a9f23ba1407b0"
+			"Rev": "dda2e3cb5affa313f5e314a0f00a3cb54d7a948f"
 		},
 		{
 			"ImportPath": "github.com/arkenio/goarken/storage",
-			"Rev": "e7903fe0d5a896ea17c6deb0304a9f23ba1407b0"
+			"Rev": "dda2e3cb5affa313f5e314a0f00a3cb54d7a948f"
 		},
 		{
 			"ImportPath": "github.com/coreos/etcd/client",

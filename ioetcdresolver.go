@@ -49,7 +49,22 @@ func NewEtcdResolver(c *Config) (*IoEtcdResolver, error) {
 
 func (r *IoEtcdResolver) init() {
 
+	//Reset dest2ProxyCache when a domain model event is published
+	go func() {
+		updateChan := r.arkenModel.Listen()
+		for {
+			select {
+			case modelEvent:= <- updateChan:
+				if domain,ok := modelEvent.Model.(*goarken.Domain); ok {
+					delete(r.dest2ProxyCache, domain.Name)
+				}
+			}
+		}
+	}()
 }
+
+
+
 
 type ServiceConfig struct {
 	Robots string `json:"robots"`
