@@ -2,6 +2,9 @@
 	"ImportPath": "github.com/arkenio/gogeta",
 	"GoVersion": "go1.5",
 	"GodepVersion": "v62",
+	"Packages": [
+		"./..."
+	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
@@ -34,6 +37,10 @@
 		{
 			"ImportPath": "github.com/golang/glog",
 			"Rev": "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
+		},
+		{
+			"ImportPath": "github.com/prometheus/common/log",
+			"Rev": "40456948a47496dc22168e6af39297a2f8fbf38c"
 		},
 		{
 			"ImportPath": "github.com/ugorji/go/codec",
