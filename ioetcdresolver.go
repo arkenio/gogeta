@@ -87,6 +87,7 @@ func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, error) {
 		service := r.arkenModel.Services[domain.Value]
 		if service == nil {
 			glog.Errorf("The services map doesn't contain service with the domain value: %s", domain.Value)
+			return nil, errors.New("Domain not found")
 		}
 		switch domain.Typ {
 
