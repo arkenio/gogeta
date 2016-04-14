@@ -55,7 +55,7 @@ func parseConfig() *Config {
 	flag.StringVar(&config.servicePrefix, "serviceDir", "/services", "etcd prefix to get services")
 	flag.StringVar(&config.etcdAddress, "etcdAddress", "http://127.0.0.1:4001/", "etcd client host")
 	flag.StringVar(&config.resolverType, "resolverType", "IoEtcd", "type of resolver (IoEtcd|Env|Dummy)")
-	flag.StringVar(&config.templateDir, "templateDir", "./templates", "Template directory")
+	flag.StringVar(&config.templateDir, "templateDir", "", "Template directory")
 	flag.StringVar(&config.UrlHeaderParam, "UrlHeaderParam", "", "Name of the param to inject the originating url")
 	flag.IntVar(&config.lastAccessInterval, "lastAccessInterval", 10, "Interval (in seconds to refresh last access time of a service")
 	flag.BoolVar(&config.forceFwSsl, "forceFwSsl", false, "If not x-forwarded-proto set to https, then redirecto to the equivalent https url")

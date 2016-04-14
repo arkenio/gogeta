@@ -55,7 +55,11 @@ func (ph proxyHandler) OnError(w http.ResponseWriter, r *http.Request, error err
 
 func (p *proxy) start() {
 	glog.Infof("Listening on port %d", p.config.port)
-	http.Handle("/__static__/", http.FileServer(http.Dir(p.config.templateDir)))
+	if p.config.templateDir != "" {
+		http.Handle("/__static__/", http.FileServer(http.Dir(p.config.templateDir)))
+	} else {
+		http.Handle("/__static__/", http.FileServer(FS(false)))
+	}
 	http.Handle("/", proxyHandler(p.proxy))
 	glog.Fatalf("%s", http.ListenAndServe(fmt.Sprintf(":%d", p.config.port), nil))
 

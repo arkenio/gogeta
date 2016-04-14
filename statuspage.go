@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	goarken "github.com/arkenio/goarken/model"
 	"html/template"
 	"net/http"
@@ -16,7 +17,6 @@ type StatusData struct {
 }
 
 func (sp *StatusPage) serve(w http.ResponseWriter, r *http.Request) {
-
 	var code int
 	switch sp.error.ComputedStatus {
 	case "notfound":
@@ -28,11 +28,11 @@ func (sp *StatusPage) serve(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	templateDir := sp.config.templateDir
-	tmpl, err := template.ParseFiles(templateDir+"/main.tpl", templateDir+"/body_"+sp.error.ComputedStatus+".tpl")
+
+	tmpl, err := sp.getTemplateForStatus(sp.error.ComputedStatus)
+
 	if err != nil {
 		http.Error(w, "Unable to serve page : "+sp.error.ComputedStatus, code)
-
 		return
 	}
 
@@ -42,4 +42,28 @@ func (sp *StatusPage) serve(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Failed to execute templates : "+err.Error(), 500)
 	}
+}
+
+func (sp *StatusPage) getTemplateForStatus(status string) (*template.Template, error) {
+	templateDir := sp.config.templateDir
+	if templateDir != "" {
+		tmpl, err := template.ParseFiles(templateDir+"/main.tpl", templateDir+"/body_"+sp.error.ComputedStatus+".tpl")
+
+		if err != nil {
+			return nil, errors.New("Unable to serve page : " + status)
+		}
+		return tmpl, nil
+
+	} else {
+		main := FSMustString(false, "/main.tpl")
+		status := FSMustString(false, "/body_"+sp.error.ComputedStatus+".tpl")
+
+		tmpl, _ := template.New("errorPage").Parse(main)
+		tmpl, _ = tmpl.Parse(status)
+
+		return tmpl, nil
+
+	}
+	return nil, errors.New("Unexpected")
+
 }

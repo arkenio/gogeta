@@ -2,6 +2,7 @@ FROM golang:1.5
 MAINTAINER      Damien METZLER <dmetzler@nuxeo.com>
 
 RUN go get github.com/tools/godep
+RUN go get github.com/mjibson/esc
 RUN CGO_ENABLED=0 go install -a std
 ENV APP_DIR $GOPATH/src/github.com/arkenio/gogeta
 
@@ -12,5 +13,6 @@ ENTRYPOINT ["/gogeta", "-etcdAddress", "http://etcd:2379/", "-alsologtostderr=tr
 ADD . $APP_DIR
 # Compile the binary and statically link
 RUN cd $APP_DIR && \
+    esc -o statictemplate.go -prefix templates templates && \
     CGO_ENABLED=0 godep restore && \
     godep go build -o /gogeta -ldflags '-w -s'
