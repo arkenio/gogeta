@@ -3,8 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/arkenio/goarken/model"
-	"github.com/arkenio/goarken/storage"
+	"github.com/arkenio/arken/goarken/model"
+	"github.com/arkenio/arken/goarken/storage"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -38,13 +38,11 @@ func NewEnvResolver(c *Config) *EnvResolver {
 func (r *EnvResolver) resolve(domain string) (http.Handler, error) {
 	serviceName := strings.Split(domain, ".")[0]
 
-	serviceTree := r.arkenModel.Services[serviceName]
-	if serviceTree != nil {
+	service := r.arkenModel.Services[serviceName]
 
-		if service, err := serviceTree.Next(); err != nil {
-			uri := fmt.Sprintf("http://%s:%d/", service.Location.Host, service.Location.Port)
-			return r.getOrCreateProxyFor(uri), nil
-		}
+	if service != nil {
+		uri := fmt.Sprintf("http://%s:%d/", service.Location.Host, service.Location.Port)
+		return r.getOrCreateProxyFor(uri), nil
 	}
 
 	return nil, errors.New("Unable to resolve")
