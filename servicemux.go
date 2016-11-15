@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	goarken "github.com/arkenio/arken/goarken/model"
+	goarken "github.com/arkenio/goarken/model"
 	"net/http"
 	"net/http/httputil"
 	"net/url"

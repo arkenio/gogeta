@@ -3,8 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
-	goarken "github.com/arkenio/arken/goarken/model"
-	"github.com/arkenio/arken/goarken/storage"
+	goarken "github.com/arkenio/goarken/model"
+	"github.com/arkenio/goarken/storage"
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
 	"net"
@@ -54,19 +54,17 @@ func (r *IoEtcdResolver) init() {
 		updateChan := r.arkenModel.Listen()
 		for {
 			select {
-			case modelEvent := <-updateChan:
-				if modelEvent.Model != nil {
-					if domain, ok := modelEvent.Model.(*goarken.Domain); ok {
-						delete(r.dest2ProxyCache, domain.Name)
-					}
+			case modelEvent:= <- updateChan:
+				if domain,ok := modelEvent.Model.(*goarken.Domain); ok {
+					delete(r.dest2ProxyCache, domain.Name)
 				}
-			default:
-				return
 			}
 		}
-
 	}()
 }
+
+
+
 
 type ServiceConfig struct {
 	Robots string `json:"robots"`
@@ -94,15 +92,15 @@ func (r *IoEtcdResolver) resolve(domainName string) (http.Handler, error) {
 		switch domain.Typ {
 
 		case SERVICE_DOMAINTYTPE:
-			service := r.arkenModel.Services[domain.Value]
-			if service != nil && service.Location.IsFullyDefined() {
+			service, err := r.arkenModel.Services[domain.Value].Next()
+			if err == nil && service.Location.IsFullyDefined() {
 				addr := net.JoinHostPort(service.Location.Host, strconv.Itoa(service.Location.Port))
 				uri := fmt.Sprintf("http://%s/", addr)
 				r.setLastAccessTime(service)
 				return r.getOrCreateProxyFor(service, uri), nil
 
 			} else {
-				return nil, errors.New("Service not found")
+				return nil, err
 			}
 		case URI_DOMAINTYPE:
 			return r.getOrCreateProxyFor(nil, domain.Value), nil

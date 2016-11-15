@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	goarken "github.com/arkenio/arken/goarken/model"
+	goarken "github.com/arkenio/goarken/model"
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
 	"net/http"
@@ -95,7 +95,7 @@ func hostnameOf(host string) string {
 func reactivate(sp *StatusPage, c *Config) {
 	client, _ := c.getEtcdClient()
 	//TODO use model
-	_, error := client.Set(context.Background(), c.servicePrefix+"/"+sp.error.Status.Service.Name+"/status/expected", goarken.STARTED_STATUS, nil)
+	_, error := client.Set(context.Background(), c.servicePrefix+"/"+sp.error.Status.Service.Name+"/"+sp.error.Status.Service.Index+"/status/expected", goarken.STARTED_STATUS, nil)
 	if error != nil {
 		glog.Errorf("Fail: setting expected state = 'started' for instance %s. Error:%s", sp.error.Status.Service.Name, error)
 	}

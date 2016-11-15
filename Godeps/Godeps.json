@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/arkenio/gogeta",
 	"GoVersion": "go1.5",
-	"GodepVersion": "v74",
+	"GodepVersion": "v62",
 	"Packages": [
 		"./..."
 	],
@@ -12,14 +12,12 @@
 			"Rev": "4b6ea7319e214d98c938f12692336f7ca9348d6b"
 		},
 		{
-			"ImportPath": "github.com/arkenio/arken/goarken/model",
-			"Comment": "arken-v1-17102016-13-g3d908e3",
-			"Rev": "3d908e30718587a1913687f138f102679665906e"
+			"ImportPath": "github.com/arkenio/goarken/model",
+			"Rev": "c1b8bd199222dd5b0f266f61333467c2450cc1bd"
 		},
 		{
-			"ImportPath": "github.com/arkenio/arken/goarken/storage",
-			"Comment": "arken-v1-17102016-13-g3d908e3",
-			"Rev": "3d908e30718587a1913687f138f102679665906e"
+			"ImportPath": "github.com/arkenio/goarken/storage",
+			"Rev": "c1b8bd199222dd5b0f266f61333467c2450cc1bd"
 		},
 		{
 			"ImportPath": "github.com/coreos/etcd/client",
