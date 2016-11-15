@@ -3,8 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/arkenio/goarken/model"
-	"github.com/arkenio/goarken/storage"
+	"github.com/arkenio/arken/goarken/model"
+	"github.com/arkenio/arken/goarken/storage"
 	"net/http"
 	"net/http/httputil"
 	"net/url"

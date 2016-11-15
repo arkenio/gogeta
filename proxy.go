@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	goarken "github.com/arkenio/goarken/model"
+	goarken "github.com/arkenio/arken/goarken/model"
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
 	"net/http"

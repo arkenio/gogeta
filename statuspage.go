@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	goarken "github.com/arkenio/goarken/model"
+	goarken "github.com/arkenio/arken/goarken/model"
 	"html/template"
 	"net/http"
 )

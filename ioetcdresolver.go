@@ -3,8 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
-	goarken "github.com/arkenio/goarken/model"
-	"github.com/arkenio/goarken/storage"
+	goarken "github.com/arkenio/arken/goarken/model"
+	"github.com/arkenio/arken/goarken/storage"
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
 	"net"
