@@ -14,12 +14,12 @@
 		{
 			"ImportPath": "github.com/arkenio/arken/goarken/model",
 			"Comment": "arken-v1-17102016-13-g3d908e3",
-			"Rev": "3d908e30718587a1913687f138f102679665906e"
+			"Rev": "9ae12afd524bcb9f1b7e29478e5b688878fdf6af"
 		},
 		{
 			"ImportPath": "github.com/arkenio/arken/goarken/storage",
 			"Comment": "arken-v1-17102016-13-g3d908e3",
-			"Rev": "3d908e30718587a1913687f138f102679665906e"
+			"Rev": "9ae12afd524bcb9f1b7e29478e5b688878fdf6af"
 		},
 		{
 			"ImportPath": "github.com/coreos/etcd/client",
